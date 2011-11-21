@@ -73,12 +73,12 @@ FlySiesta_version=fsabout('version');
   state={'off','on'};
   set(handles.advancedpanel,'Visible',state{get(handles.advancedoptions,'Value')+1})        % - " -
   set(handles.s_advancedpanel,'Visible',state{get(handles.advancedoptions,'Value')+1})      % - " -
- set(handles.method,'UserData',1)                                                           % Default nr of reps for non-linear Weibull fit
+ set(handles.method,'UserData',3)                                                           % Default nr of reps for non-linear Weibull fit
   handles.fitmethods=true(3,1);                                                             % Default, perform all fit methods
  movegui(handles.figure,'center')
  set(findobj(handles.figure,'Units','pixels'),'Units','characters')
  set(get(handles.figure,'Children'),'HandleVisibility','callback')
- 
+
 % Load Button Icons
 try load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
 end
@@ -927,7 +927,7 @@ end
       delete(findobj([preview.axes],'Tag','flyplot'))
       delete(findobj([preview.axes],'Tag','whitebox'))
       if ~logical(exindex(value))
-        fill([analysis_range(1) analysis_range(1) analysis_range(2)+1 analysis_range(2)+1],[0.001 max([1.15*max(activity(:,value)) 1]) max([1.15*max(activity(:,value)) 1]) 0.001],[1 1 1],'Parent',preview.axes,'Tag','whitebox','LineStyle','-','Clipping','on')
+        fill([analysis_range(1) analysis_range(1) analysis_range(2)-1 analysis_range(2)-1]-0.5,[0.001 max([1.15*max(activity(:,value)) 1]) max([1.15*max(activity(:,value)) 1]) 0.001],[1 1 1],'Parent',preview.axes,'Tag','whitebox','LineStyle','-','Clipping','on')
       end
       [xstairs,ystairs]=stairs([1 1:size(activity,1) size(activity,1)],[0; activity(:,value); 0]);
       fill(xstairs,ystairs,[0.1 0.1 0.5],'Tag','flyplot','EdgeColor',[0.1 0.1 0.5])
@@ -1007,11 +1007,7 @@ if ready
       flysiesta
 
     else
-      if strcmpi(eventdata,'KeepOpen')
-        % Do nothing, keep fsanalyzer open
-      else
-        close(handles.figure)
-      end
+      close(handles.figure)
     end
   else
     h_warn=warndlg({'' '              Analysis Aborted!'  '    Please Restart Analysis to Obtain Results.' ''},'Failed Analysis','modal');
@@ -1057,7 +1053,7 @@ for i=1:size(dirparts,1)
 end
 
 dirparts=dirparts(:);
-rpath=['.' filesep];
+rpath=[];
 for i=1:size(dirparts,1)
   rpath=[rpath dirparts{i}];
 end
@@ -1070,42 +1066,62 @@ dirlist=get(handles.damsfiles,'UserData');
 EXPDATA=getappdata(handles.figure,'exp');
 EXPDATA.number_of_flies(1)=size(filelist,1);
 EXPDATA.id_index=NaN(1,size(filelist,1));
-
 if hObject~=handles.infodirbutton
   SETTINGS=getappdata(handles.figure,'settings');
   SETTINGS.filelist=filelist;
   SETTINGS.dirlist=dirlist;
 end
+channels=cell(EXPDATA.number_of_flies(1),1);
+date=NaN(1,EXPDATA.number_of_flies(1));
+entries=NaN(1,EXPDATA.number_of_flies(1));
+binsize=NaN(1,EXPDATA.number_of_flies(1));
+time=NaN(1,EXPDATA.number_of_flies(1));
+same_data_rec=false(1,3);
 
-% Call Toolbox Function
-[EXPDATA.Activity,EXPDATA.id_index,envVars]=readDamsData(filelist,dirlist,EXPDATA.number_of_flies(1));
-
-% If loaded from a settings-file, return to original path
-if ~isempty(get(handles.infodirbutton,'UserData'))
-  cd(get(handles.infodirbutton,'UserData'))
-end
-
-channels=cell(EXPDATA.nr_flies(1),1);
-monitors=cell(EXPDATA.nr_flies(1),1);
-
-
-if ~isempty(EXPDATA.Activity)
-  % Create Strings from Channel and Monitor info
-  for id=1:EXPDATA.number_of_flies(1)
-    channels{id}=sprintf('Channel %02.0f',EXPDATA.id_index(1,id));
-    monitors{id}=sprintf('Monitor %03.0f',EXPDATA.id_index(2,id));
+if ~isempty(filelist)
+  % Determine size of Activity Matrix
+  fid=fopen([dirlist{1} filesep filelist{1}]);
+  fgetl(fid);
+  first_entries=str2double(fgetl(fid));
+  fclose(fid);
+  EXPDATA.activity=zeros(first_entries,EXPDATA.number_of_flies(1),'uint8');
+  % Read files and get Activity Matrix
+  for i=1:EXPDATA.number_of_flies(1)
+    fid=fopen([dirlist{i} filesep filelist{i}]);
+    if fid ~= -1
+      info=fgetl(fid);
+      fly_activity=fscanf(fid,'%d');
+      EXPDATA.activity(:,i)=fly_activity(4:end);
+      fclose(fid);
+      EXPDATA.id_index(i)=str2double(filelist{i}(end-5:end-4));
+      channels{i}=['Channel ' filelist{i}(end-5:end-4)];
+      % Get Data Recording Info
+      date(i)=datenum(info(end-10:end),'dd mmm yyyy');
+      entries(i)=fly_activity(1);
+      binsize(i)=fly_activity(2);
+      time(i)=fly_activity(3);
+    else
+      h_dlg=warndlg({'Error - Cannot Proceed. One or more DAMS data files are missing.' 'Please start over, reselecting the data files.'},'Error: MissingFile','modal');
+      figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
+      setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
+      uiwait(h_dlg)
+      return;
+    end
   end
-  
-  % Control Recording Info  
-  same_data_rec=false(1,3);
-  if any(diff(envVars.date))
+  % If loaded from a settings-file, return to original path
+  if ~isempty(get(handles.infodirbutton,'UserData'))
+    cd(get(handles.infodirbutton,'UserData'))
+  end
+
+  % Control Recording Info
+  if any(diff(date))
     h_dlg=msgbox({'' '   Note: Not all files have the same date of recording.   ' ''},'Information','modal');
     figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
     setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
     uiwait(h_dlg)
   else same_data_rec(1)=true;
   end
-  if any(diff(envVars.entries)) || any(diff(time))
+  if any(diff(entries)) || any(diff(time))
     h_dlg=warndlg({'Selected files cannot be analyzed together because the' 'recording period of one or more files differs from the rest!' 'Please choose files with the same recording periods!'},'Warning: Recording Period','modal');
     figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
     setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
@@ -1113,14 +1129,14 @@ if ~isempty(EXPDATA.Activity)
     return;
   else same_data_rec(2)=true;
   end
-  if any(diff(envVars.binsize))
+  if any(diff(binsize))
     h_dlg=warndlg({'Selected files cannot be analyzed together because the' 'recording binsize of one or more files differs from the rest!' 'Please choose files with the same recording binsize!'},'Warning: Binsize','modal');
     figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
     setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
     uiwait(h_dlg)
     return;
   else same_data_rec(3)=true;
-    if envVars.binsize(1)~=1
+    if binsize(1)~=1
       h_dlg=warndlg({'Error - Cannot Proceed. This version of FlySiesta' 'only supports DAMS data recorded with binsize=1 min!'},'Error: Binsize','modal');
       figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
       setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
@@ -1130,15 +1146,17 @@ if ~isempty(EXPDATA.Activity)
   end
   if all(same_data_rec)
     timestr=num2str(time(1));
-    while length(timestr)<4
+    if length(timestr)<4
       timestr=['0' timestr];
     end
-    recstartvec=datevec([datestr(envVars.date(1)) ' ' timestr(1:2) ':' timestr(3:4)]);
+    recstartvec=datevec([datestr(date(1)) ' ' timestr(1:2) ':' timestr(3:4)]);
   else
     recstartvec=[];
   end
 else
   recstartvec=[];
+  EXPDATA.activity=[];
+  EXPDATA.id_index=[];
 end
 EXPDATA.matrix_index{1}=[1:size(EXPDATA.id_index,2)];
 
@@ -1163,47 +1181,6 @@ if ~isempty(beginlastday)
   if ~isempty(no_activity)
     set(handles.alist,'Value',no_activity)
     move_files_between_lists('alist','olist',handles)
-  end
-end
-
-% #TOOLBOX
-function [onoffMatrix,IDindex,envVars]=readDamsData(filelist,dirlist,nrflies)
-  IDindex=NaN(2,nrflies);
-  envVars=struct('date',NaN(1,nrflies),'entries',NaN(1,nrflies),'binsize',NaN(1,nrflies),'time',NaN(1,nrflies));
-  if ~isempty(filelist)
-    % Determine size of Activity Matrix
-    fid=fopen([dirlist{1} filesep filelist{1}]);
-    fgetl(fid);
-    first_entries=str2double(fgetl(fid));
-    fclose(fid);
-    onoffMatrix=zeros(first_entries,nrflies,'uint8');
-    % Read files and get Activity Matrix
-    for i=1:nrflies
-      fid=fopen([dirlist{i} filesep filelist{i}]);
-      if fid ~= -1
-        info=fgetl(fid);
-        fly_activity=fscanf(fid,'%d');
-        onoffMatrix(:,i)=fly_activity(4:end);
-        fclose(fid);
-        IDindex(:,i)=[str2double(filelist{i}(end-5:end-4)) str2double(filelist{i}(end-8:end-6))];
-
-        % Get Data Recording Info
-        envVars.date(i)=datenum(info(end-10:end),'dd mmm yyyy');
-        envVars.entries(i)=fly_activity(1);
-        envVars.binsize(i)=fly_activity(2);
-        envVars.time(i)=fly_activity(3);
-      else
-        h_dlg=warndlg({'Error - Cannot Proceed. One or more DAMS data files are missing.' 'Please start over, reselecting the data files.'},'Error: MissingFile','modal');
-        try
-          figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
-          setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
-        end
-        uiwait(h_dlg)
-        return;
-      end
-    end
-  else
-    onoffMatrix=[];
   end
 end
 
@@ -1328,7 +1305,7 @@ SETTINGS=getappdata(handles.figure,'settings');
 % Tab 1
 % SETTINGS.filelist         (Already set)
 % Convert dirlist to relative paths
-if ~strcmp(SETTINGS.dirlist{1}(1),'.')
+if ~strcmp(SETTINGS.dirlist{1}(1:2),'..')
   for i=1:length(SETTINGS.dirlist)
     SETTINGS.dirlist{i}=relative_path(fileparts(get(handles.saveinput,'String')),SETTINGS.dirlist{i});
   end
@@ -1472,16 +1449,9 @@ for period=1:2
   end
 end
 
-% Create waitbar (but first delete any previous (from debugging usually)) %
-set(0,'ShowHiddenHandles','on')
-chroot=get(0,'Children');
-chName=get(chroot,'Name');
-if ~iscell(chName), chName={chName}; end
-delete(chroot(~cellfun(@isempty,strfind(chName,'Analyzing '))))
-set(0,'ShowHiddenHandles','off')
-
+% Create waitbar %
 figurePosition=getpixelposition(gcf);
-h_waitbar=waitbar(0,'','Name',sprintf('Analyzing %s',EXPDATA.name),'CreateCancelBtn','setappdata(gcbf,''canceling'',1)','Pointer','watch');%,'WindowStyle','modal');
+h_waitbar=waitbar(0,'','Name','Analyzing Data...','CreateCancelBtn','setappdata(gcbf,''canceling'',1)','Pointer','watch');%,'WindowStyle','modal');
 dlgPosition=getpixelposition(h_waitbar);
 setpixelposition(h_waitbar,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
 setappdata(h_waitbar,'canceling',0)
@@ -1510,7 +1480,7 @@ for period=1:2
       end
       matrix=matrix(logical_periods(:,period),:);
       real_indices=[1:size(logical_periods,1)]';
-      real_indices=reshape(real_indices(logical_periods(:,period)),[],EXPDATA.days);
+      real_indices=real_indices(logical_periods(:,period));
       DISTR(event,period)=distrfits(matrix);
     else
       break
@@ -1559,54 +1529,36 @@ for fly=1:EXPDATA.number_of_flies(1)
   ibis=end_ibis-start_ibis+1;
   start_ibis=real_indices(start_ibis);
 
-  ibis=ibis(ibis<=hours_period(period)*60);
-  start_ibis=start_ibis(ibis<=hours_period(period)*60);
+  ibis=ibis(ibis<hours_period(period)*60);
+  start_ibis=start_ibis(ibis<hours_period(period)*60);
   if STRUCT.startpoint>1
     keep=(ibis>=STRUCT.startpoint);
     ibis=ibis(keep);
     start_ibis=start_ibis(keep);
   end
   
-  % Find Day-index
-  day_index=NaN(size(ibis));
-  for d=1:EXPDATA.days
-    day_index(ismember(start_ibis,real_indices(:,d)))=d;
-  end
-  
   % Save
   if ~isempty(ibis)
-    STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
+    STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) fly*ones(size(ibis))];
   end
-  
-  STRUCT.F(fly)=length(ibis)/sum(ibis);
   
   % Calculate B, M and DFA
-  if length(unique(day_index))==EXPDATA.days
-    ibis_sorted{fly}=sort(ibis);
-    try
-      dur_corr=ibis-STRUCT.startpoint;
-      mem=NaN(1,EXPDATA.days);
-      for d=1:EXPDATA.days
-        dur_corr_day=dur_corr(day_index==d);
-        mem(d)=1/(length(dur_corr_day)-1) * sum( (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) );
-      end
-      STRUCT.M(fly)=mean(mem);
-      STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
-      STRUCT.DFA(fly)=DFA(dur_corr,false);
-      nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
-      mean_ibis(fly)=mean(dur_corr,1);
-    catch
-      for g=[all_flies female male]
-        STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
-      end
+  ibis_sorted{fly}=sort(ibis);
+  try 
+    nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
+    dur_corr=ibis-STRUCT.startpoint;
+    STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
+    STRUCT.M(fly)=1/(length(dur_corr)-1) * sum( (dur_corr(1:end-1)-mean(dur_corr(1:end-1))) .* (dur_corr(2:end)-mean(dur_corr(2:end))) / ( std(dur_corr(1:end-1))*std(dur_corr(2:end)) ) );
+    mean_ibis(fly)=mean(dur_corr,1);
+  catch
+    for g=[all_flies female male]
+      STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
     end
   end
- 
+  
 end
-STRUCT.F(isinf(STRUCT.F))=NaN;
 STRUCT.B(isinf(STRUCT.B))=NaN;
 STRUCT.M(isinf(STRUCT.M))=NaN;
-STRUCT.DFA(isinf(STRUCT.DFA))=NaN;
 
 halfbin=1/2; % To compensate for binsize effects on survival histograms
 STRUCT.histogram=NaN(min([parameters(1) max(nlargest)]),EXPDATA.number_of_flies(1));
