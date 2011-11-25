@@ -99,7 +99,7 @@ TabPanel.Color{1}=get(0,'defaultUicontrolBackgroundColor');
 set(handles.TBP_tabpanel,'UserData',TabPanel)
 
 % Create structures
-EXPDATA=struct('name',[],'number_of_flies',NaN(1,3),'sleep_threshold',NaN(1),'lights',NaN(1,2),'setperiods',NaN(2,2),'days',NaN(1),'activity',[],'sleep',[],'id_index',[],'matrix_index',[],'FlySiesta_version',FlySiesta_version);
+EXPDATA=struct('name',[],'number_of_flies',NaN(1,3),'sleep_threshold',NaN(1),'lights',NaN(1,2),'setperiods',NaN(2,2),'days',NaN(1),'activity',[],'sleep',[],'id_index',[],'monitor_index',[],'matrix_index',[],'FlySiesta_version',FlySiesta_version);
 SETTINGS=struct('savename',[],'filelist',[],'dirlist',[], ...
                 'alist',[],'flist',[],'mlist',[],'olist',[], ...
                 'lights',[],'daysindex',[],'setperiods',[],'threshold',[], ...
@@ -1078,22 +1078,26 @@ if hObject~=handles.infodirbutton
 end
 
 % Call Toolbox Function
-[EXPDATA.Activity,EXPDATA.id_index,envVars]=readDamsData(filelist,dirlist,EXPDATA.number_of_flies(1));
+[EXPDATA.activity,IDs,envVars]=readDamsData(filelist,dirlist,EXPDATA.number_of_flies(1));
+
+% #TODO To be changed in future versions - Join into one id matrix! 
+% (Creates compatibility issues with other FS apps though.)
+EXPDATA.id_index=IDs(1,:);
+EXPDATA.monitor_index=IDs(2,:);
 
 % If loaded from a settings-file, return to original path
 if ~isempty(get(handles.infodirbutton,'UserData'))
   cd(get(handles.infodirbutton,'UserData'))
 end
 
-channels=cell(EXPDATA.nr_flies(1),1);
-monitors=cell(EXPDATA.nr_flies(1),1);
+channels=cell(EXPDATA.number_of_flies(1),1);
+monitors=cell(EXPDATA.number_of_flies(1),1);
 
-
-if ~isempty(EXPDATA.Activity)
+if ~isempty(EXPDATA.activity)
   % Create Strings from Channel and Monitor info
   for id=1:EXPDATA.number_of_flies(1)
-    channels{id}=sprintf('Channel %02.0f',EXPDATA.id_index(1,id));
-    monitors{id}=sprintf('Monitor %03.0f',EXPDATA.id_index(2,id));
+    channels{id}=sprintf('Channel %02.0f',EXPDATA.id_index(id));
+    monitors{id}=sprintf('Monitor %03.0f',EXPDATA.monitor_index(id));
   end
   
   % Control Recording Info  
@@ -1105,7 +1109,7 @@ if ~isempty(EXPDATA.Activity)
     uiwait(h_dlg)
   else same_data_rec(1)=true;
   end
-  if any(diff(envVars.entries)) || any(diff(time))
+  if any(diff(envVars.entries)) || any(diff(envVars.time))
     h_dlg=warndlg({'Selected files cannot be analyzed together because the' 'recording period of one or more files differs from the rest!' 'Please choose files with the same recording periods!'},'Warning: Recording Period','modal');
     figurePosition=getpixelposition(handles.figure); dlgPosition=getpixelposition(h_dlg);
     setpixelposition(h_dlg,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
@@ -1129,7 +1133,7 @@ if ~isempty(EXPDATA.Activity)
     end
   end
   if all(same_data_rec)
-    timestr=num2str(time(1));
+    timestr=num2str(envVars.time(1));
     while length(timestr)<4
       timestr=['0' timestr];
     end
@@ -1185,7 +1189,7 @@ function [onoffMatrix,IDindex,envVars]=readDamsData(filelist,dirlist,nrflies)
         fly_activity=fscanf(fid,'%d');
         onoffMatrix(:,i)=fly_activity(4:end);
         fclose(fid);
-        IDindex(:,i)=[str2double(filelist{i}(end-5:end-4)) str2double(filelist{i}(end-8:end-6))];
+        IDindex(:,i)=[str2double(filelist{i}(end-5:end-4)) str2double(filelist{i}(end-9:end-7))];
 
         % Get Data Recording Info
         envVars.date(i)=datenum(info(end-10:end),'dd mmm yyyy');
