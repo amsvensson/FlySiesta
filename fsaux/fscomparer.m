@@ -71,6 +71,11 @@ FlySiesta_version=fsabout('version');
  set(handles.testmode,'UserData',[1 0 0])
  set(handles.testparam,'UserData',{'0.05' '0.05' '10000' 'NaN'})
  movegui(handles.figure,'center')
+% ! TEMPORARY
+handles.evperselect=[0 1 ; 0 0 ; 0 1 ; 0 0];
+handles.varselect=[1 1 1 1 0 1 0 1 1]; %[1 0 0 1 0 1 0 0 1];
+%set(handles.evperselect,'UserData',[0 1 ; 0 0 ; 0 1 ; 0 0]);
+% !
 
 % Load Button Icons & Colors
 try load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
@@ -566,6 +571,23 @@ if ~isempty(answer) && ~isequal(answer,defaultanswer) && isnumeric(str2double(an
   set(handles.start,'UserData',true)
 end
 end
+function evperselect_Callback(hObject, eventdata, handles)
+% ! MAKE POP-UP SELECTION
+% For Now, Manually Select ABs, IAIs, Dark
+
+%handles.evperselect=[0 1 ; 0 0 ; 0 1 ; 0 0];
+% as definied TEMPORAILY in figure startup
+
+end
+function varselect_Callback(hObject, eventdata, handles)
+% ! MAKE POP-UP SELECTION
+% For Now, Manually Select All
+
+%handles.varselect
+% tot, k, B, M, etc
+% as definied TEMPORAILY in figure startup
+
+end
 function help_Callback(hObject, eventdata, handles)
 stat=web('http://www.neural-circuits.org/flysiesta/userguide/','-browser');
 if logical(stat)
@@ -601,11 +623,11 @@ end
 if all_ok
   set(handles.figure,'Pointer','watch')
   drawnow expose
-
- % Load Files
+  
+  % Load Files
   if get(handles.start,'UserData')
-    FSCOMP.patterns=load_patterns(PRM,FSCOMP.selection,handles);
-    FSCOMP.bars=load_bars(PRM,FSCOMP.selection,handles);
+    FSCOMP.patterns=load_patterns(PRM,FSCOMP.selection,FSCOMP.flyid,FSCOMP.matrixid,handles);
+    FSCOMP.bars=load_bars(PRM,FSCOMP.selection,FSCOMP.flyid,FSCOMP.matrixid,handles);
     if PRM.calc_diffs
       [FSCOMP,PRM]=diff_bars(FSCOMP,PRM,handles);
     end
@@ -613,37 +635,43 @@ if all_ok
     FSCOMP=remove_separators(FSCOMP);
   end
   
- % Plot Pattern Figures
+  % Plot Pattern Figures
   if ~PRM.calc_diffs
     handles.patfigs=make_patfigure(FSCOMP,handles);
     guidata(handles.figure,handles);
     plot_patterns(FSCOMP,PRM,handles)
   end
-
- % Plot Bar Graph Figures
+  
+  % Plot Bar Graph Figures
   handles.barfigs=make_barfigures(FSCOMP,PRM,handles);
   guidata(handles.figure,handles);
   FSCOMP=plot_n_test_bars(FSCOMP,PRM,handles);
   
- % Show Figures when Done
-  try
+  % Show Figures when Done
+  if ~PRM.calc_diffs
     for fig=1:length(handles.patfigs)
-      set(handles.patfigs(fig),'Visible','on')
+      try
+        set(handles.patfigs(fig),'Visible','on')
+      end
     end
   end
-  set(handles.barfigs','Visible','on')
+  for fig=1:length(handles.barfigs(:))
+    try
+      set(handles.barfigs(fig),'Visible','on')
+    end
+  end
   drawnow
-
+  
   % Save to Memory & Disk
   setappdata(handles.figure,'fscomp',FSCOMP)
   save(get(handles.savebox,'String'),'FSCOMP','PRM')
-
+  
   
   % Save Figures to disk (Slow!)
   %savepath=fileparts(get(handles.savebox,'String'));
   %for i=1:8, saveas(handles.barfigs(i),[savepath filesep get(handles.barfigs(i),'Name') '.fig']); end
-
-  % Clear Memory 
+  
+  % Clear Memory
   %rmappdata(handles.figure,'files');
   %rmappdata(handles.figure,'fscomp');
   
@@ -654,7 +682,7 @@ end
 
 function [all_ok,FSCOMP,PRM]=read_input_data(handles)
 FILES=getappdata(handles.figure,'files');
-FSCOMP=struct('name',[],'names',[],'files',[],'selection',[],'flyid',[],'group',[],'x',[],'bars',[],'bfactors',[],'bfactnames',[],'patterns',[],'pfactors',[],'pfactnames',[]);
+FSCOMP=struct('name',[],'names',[],'files',[],'selection',[],'flyid',[],'matrixid',[],'group',[],'x',[],'bars',[],'bfactors',[],'bfactnames',[],'patterns',[],'pfactors',[],'pfactnames',[]);
 all_ok=false;
 
 %%% Find Dimensions and Input Values %%%
@@ -693,6 +721,7 @@ names=cell(1,nrfiles);
 files=cell(1,nrfiles);
 selection=cell(1,nrfiles);
 flyid=cell(1,nrfiles);
+matrixid=cell(1,nrfiles);
 nrflies=NaN(1,nrfiles);
 events=NaN(1,nrfiles);
 nrdays=NaN(1,nrfiles);
@@ -703,7 +732,11 @@ for file=1:nrfiles
   files{file}=[dirstring{file} filestring{file}];
   selection{file}=FILES(file).selection;
   flyid{file}=FILES(file).EXPDATA.id_index(selection{file});
+  if length(unique(flyid{file}))~=length(selection{file})
+    flyid{file}=1:length(selection{file});
+  end 
   nrflies(file)=max([flyid{file} length(flyid{file})]);
+  matrixid{file}=FILES(file).EXPDATA.matrix_index{1}(selection{file});
   events(file)=size(FILES(file).DISTR,1);
   nrdays(file)=FILES(file).EXPDATA.days;
   factors(1,file)=FILES(file).statgen-1;
@@ -759,6 +792,17 @@ name=get(handles.namebox,'String');
 if isempty(name) || strcmp(name,'Title Name')
   [path,name]=fileparts(get(handles.savebox,'String'));
 end
+
+% Event and Period Selection for Analysis
+% ! TEMPORARY !
+evperselect=handles.evperselect;
+%evperselect=get(handles.evperselect,'UserData');
+
+% Variable Selection for Analysis
+% ! TEMPORARY !
+varselect=handles.varselect;
+
+
 % Test Parameters
 param=get(handles.testparam,'UserData');
 alphanorm=str2double(param{1});
@@ -788,6 +832,8 @@ PRM.nrflies=max(nrflies);
 PRM.nrfiles=nrfiles;
 PRM.factors=factors;
 PRM.sex=sex;
+PRM.evperselect=evperselect;
+PRM.varselect=varselect;
 PRM.pairedtest=pairedtest;
 PRM.calc_diffs=calc_diffs;
 PRM.alphanorm=alphanorm;
@@ -801,6 +847,7 @@ FSCOMP.names=names;
 FSCOMP.files=files;
 FSCOMP.selection=selection;
 FSCOMP.flyid=flyid;
+FSCOMP.matrixid=matrixid;
 FSCOMP.group=group;
 FSCOMP.x=xbars;
 
@@ -808,7 +855,7 @@ all_ok=all(ok);
 
 end
 
-function [patterns]=load_patterns(PRM,selection,handles)
+function [patterns]=load_patterns(PRM,selection,flyid,matrixid,handles)
 FILES=getappdata(handles.figure,'files');
 FILES(~PRM.truefiles)=[];
 
@@ -818,22 +865,22 @@ for f=1:PRM.nrfiles
     activity=FILES(f).EXPDATA.activity(:,selection{f});
     sleep=FILES(f).EXPDATA.sleep(:,selection{f});
     days=FILES(f).EXPDATA.days;
-
+    
     amins_hh_full=reshape(sum(reshape(logical(activity),30,[]),1),days*48,[]);
     amins_hh_day=reshape(amins_hh_full,48,length(selection{f}),days);
-
+    
     smins_hh_full=reshape(sum(reshape(sleep,30,[]),1),days*48,[]);
     smins_hh_day=reshape(smins_hh_full,48,length(selection{f}),days);
-
-    patterns(1).full(1:days*48,selection{f},f)=amins_hh_full;
-    patterns(1).day(1:48,selection{f},f)=mean(amins_hh_day,3);
-
-    patterns(2).full(1:days*48,selection{f},f)=smins_hh_full;
-    patterns(2).day(1:48,selection{f},f)=mean(smins_hh_day,3);
+    
+    patterns(1).full(1:days*48,flyid{f},f)=amins_hh_full;
+    patterns(1).day(1:48,flyid{f},f)=mean(amins_hh_day,3);
+    
+    patterns(2).full(1:days*48,flyid{f},f)=smins_hh_full;
+    patterns(2).day(1:48,flyid{f},f)=mean(smins_hh_day,3);
   end
 end
 end
-function [bars]=load_bars(PRM,selection,handles)
+function [bars]=load_bars(PRM,selection,flyid,matrixid,handles)
 FILES=getappdata(handles.figure,'files');
 FILES(~PRM.truefiles)=[];
 
@@ -853,32 +900,32 @@ for f=1:PRM.nrfiles
     days=FILES(f).EXPDATA.days;
     for per=1:2
       % Total
-      bars(1,per).total(selection{f},f)=sum(logical(activity(period{per},:)),1)/days;
-      bars(2,per).total(selection{f},f)=sum(sleep(period{per},:),1)/days;
-      bars(3,per).total(selection{f},f)=sum(~activity(period{per},:),1)/days;
-      bars(4,per).total(selection{f},f)=sum(~sleep(period{per},:),1)/days;
+      bars(1,per).total(flyid{f},f)=sum(logical(activity(period{per},:)),1)/days;
+      bars(2,per).total(flyid{f},f)=sum(sleep(period{per},:),1)/days;
+      bars(3,per).total(flyid{f},f)=sum(~activity(period{per},:),1)/days;
+      bars(4,per).total(flyid{f},f)=sum(~sleep(period{per},:),1)/days;
       for ev=1:4
         distr=FILES(f).DISTR(ev,per);
         % Number, Durations and Fragmentation of bouts/ibis
         bouts=NaN(days*24*60,FILES(f).EXPDATA.number_of_flies(1));
         bouts([distr.matrix(:,2)])=distr.matrix(:,1);
-        bouts=bouts(:,selection{f});
-        num=sum(isfinite(bouts(period{per},:)),1)/days;
+        bouts=bouts(period{per},selection{f});
+        num=sum(isfinite(bouts),1)/days;
         num(~logical(num))=NaN;
-        bars(ev,per).num(selection{f},f)=num';
-        bars(ev,per).dur(selection{f},f)=nanmean(bouts(period{per},:),1);
-        %bars(ev,per).frag(selection{f},f)=num'./bars(ev,per).total(selection{f},f);
+        bars(ev,per).num(flyid{f},f)=num';
+        bars(ev,per).dur(flyid{f},f)=nanmean(bouts,1);
+        %bars(ev,per).frag(flyid{f},f)=num'./bars(ev,per).total(selection{f},f);
         % Burst Parameters
-        bars(ev,per).B(selection{f},f)=distr.B(selection{f});
-        bars(ev,per).knl(selection{f},f)=distr.wnl.k(selection{f});
-        bars(ev,per).klin(selection{f},f)=distr.wlin.k(selection{f});
+        bars(ev,per).B(flyid{f},f)=distr.B(selection{f});
+        bars(ev,per).knl(flyid{f},f)=distr.wnl.k(selection{f});
+        bars(ev,per).klin(flyid{f},f)=distr.wlin.k(selection{f});
         
         %%% FRAGMENTATION TEMPORARY !!! %%%
-        bars(ev,per).lnl(selection{f},f)=num'./bars(ev,per).total(selection{f},f);
+        bars(ev,per).lnl(flyid{f},f)=num'./bars(ev,per).total(selection{f},f);
         %=distr.wnl.lambda(selection{f});
         
-        bars(ev,per).llin(selection{f},f)=distr.wlin.lambda(selection{f});
-        bars(ev,per).M(selection{f},f)=distr.M(selection{f});
+        bars(ev,per).llin(flyid{f},f)=distr.wlin.lambda(selection{f});
+        bars(ev,per).M(flyid{f},f)=distr.M(selection{f});
         
         
         % Remove Outliers (NaN them) & Run Lilliefors Test of Normality on Remaining Values
@@ -1153,6 +1200,7 @@ MyStyle=get(handles.colors,'UserData');
   for ev=1:4
     for per=1:2
      % figure
+    if PRM.evperselect(ev,per)
       barfigs(ev,per)=figure('Name',[FSCOMP.name ' - ' evstring{ev} ', ' perstring{per}],'Position',posfig,'IntegerHandle','on','NumberTitle','off','MenuBar','none','Color',get(0,'defaultUicontrolBackgroundColor'),'Visible','off');
       for ax=1:length(handles.barfields)
        % axes
@@ -1251,6 +1299,7 @@ MyStyle=get(handles.colors,'UserData');
     end
   end
 end
+end
 
 function plot_patterns(FSCOMP,PRM,handles)
 MyStyle=get(handles.colors,'UserData');
@@ -1311,7 +1360,7 @@ starclick=['ptext=findobj(get(gcbo,''Parent''),''Tag'',''p_star'',''-and'',''Use
 step=0;
 steps=0;
 for igr=1:length(FSCOMP.group);
-  steps=steps+(2*length(FSCOMP.group{igr})+sum(1:length(FSCOMP.group{igr})-1))*length(handles.barfields)*4*2;
+  steps=steps+(2*length(FSCOMP.group{igr})+sum(1:length(FSCOMP.group{igr})-1))*sum(PRM.varselect)*sum(sum(PRM.evperselect));
 end
 handles.waitbar=create_waitbar;
 guidata(handles.figure,handles)
@@ -1323,66 +1372,70 @@ for g=1:length(FSCOMP.group)
   yminbars=zeros(files_group,1);
   for ev=1:4
     for per=1:2
-      fighandles=get(handles.barfigs(ev,per),'UserData');
-      for ax=1:length(handles.barfields)
-        %%% Plot each bar %%%
-        for fg=1:files_group
-          f=FSCOMP.group{g}(fg);
-          % Select flies
-          if PRM.pairedtest
-            if files_group==2
-              flies=isfinite(diff(FSCOMP.bars(ev,per).(handles.barfields{ax})(:,FSCOMP.group{g}(1:files_group))',1)');
-            else
-              disp_errordlg('Cannot Proceed: All groups must be of size two!');
-              delete(handles.waitbar)
-              delete(handles.patfigs)
-              return
+      if PRM.evperselect(ev,per)
+        fighandles=get(handles.barfigs(ev,per),'UserData');
+        for ax=1:length(handles.barfields)
+          if PRM.varselect(ax)
+            %%% Plot each bar %%%
+            for fg=1:files_group
+              f=FSCOMP.group{g}(fg);
+              % Select flies
+              if PRM.pairedtest
+                if files_group==2
+                  flies=isfinite(diff(FSCOMP.bars(ev,per).(handles.barfields{ax})(:,FSCOMP.group{g}(1:files_group))',1)');
+                else
+                  disp_errordlg('Cannot Proceed: All groups must be of size two!');
+                  delete(handles.waitbar)
+                  delete(handles.patfigs)
+                  return
+                end
+              else
+                flies=1:length(FSCOMP.bars(ev,per).(handles.barfields{ax})(:,f));
+              end
+              % Plot
+              y=nanmean(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f));
+              ysem=nanstd(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f))/sqrt(sum(isfinite(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f))));
+              ymaxbars(fg)=max([y+ysem 0]);
+              yminbars(fg)=min([y-ysem 0]);
+              bar(FSCOMP.x(f),y,'Parent',fighandles.axes(ax),'Tag','bar','UserData',f,'FaceColor',CmpColors(fg,:),'ButtonDownFcn',barclick)
+              errorbar(FSCOMP.x(f),y,ysem,'Parent',fighandles.axes(ax),'UserData',f,'LineWidth',1.2,'LineStyle','none','Color','k')
+              % Text Bar-values
+              if y>0, valign='bottom';
+              else    valign='top';
+              end
+              if ~isnan(y)
+                text('Position',[FSCOMP.x(f),0],'String',sprintf('%.*f',pw(ax),y),'Parent',fighandles.axes(ax),'Tag','valuetext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{1},'ButtonDownFcn',barclick)
+                text('Position',[FSCOMP.x(f),0],'String',sprintf('%d',sum(isfinite(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f)))),'Parent',fighandles.axes(ax),'Tag','nrtext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{2},'ButtonDownFcn',barclick)
+              end
+              if ~PRM.calc_diffs && (ax==6 || ax==9)
+                line([0.2 max(FSCOMP.x)+0.8],[0 0],'Parent',fighandles.axes(ax),'Color',[0.5 0.5 0.5],'LineStyle',':')
+              end
+              % Update waitbar
+              if getappdata(handles.waitbar,'canceling')
+                return
+              else
+                step=step+2;
+              end
+              waitbar(step/steps,handles.waitbar,sprintf('%1.0f%% Done',100*step/steps))
             end
+            
+            %%% Stat-test %%%
+            stattest
+          end
+          
+          %%% Fix Y-Limits %%%
+          if ~PRM.calc_diffs
+            % set y-axes for k and lambda for each fitting method the same
+            set([fighandles.axes(4) fighandles.axes(5)],'YLim',[0 max(max( [1.05 get(fighandles.axes(4),'YLim') get(fighandles.axes(5),'YLim')] ))])
+            %%% FRAGMENTATION TEMPORARY !!! %%%
+            %set([fighandles.axes(7) fighandles.axes(8)],'YLim',[0 max(max( [get(fighandles.axes(7),'YLim') get(fighandles.axes(8),'YLim')] ))])
+            set([fighandles.axes(6) fighandles.axes(9)],'YLimMode','auto')
           else
-            flies=1:length(FSCOMP.bars(ev,per).(handles.barfields{ax})(:,f));
+            set(fighandles.axes,'YLimMode','auto')
           end
-          % Plot
-          y=nanmean(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f));
-          ysem=nanstd(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f))/sqrt(sum(isfinite(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f))));
-          ymaxbars(fg)=max([y+ysem 0]);
-          yminbars(fg)=min([y-ysem 0]);
-          bar(FSCOMP.x(f),y,'Parent',fighandles.axes(ax),'Tag','bar','UserData',f,'FaceColor',CmpColors(fg,:),'ButtonDownFcn',barclick)
-          errorbar(FSCOMP.x(f),y,ysem,'Parent',fighandles.axes(ax),'UserData',f,'LineWidth',1.2,'LineStyle','none','Color','k')
-          % Text Bar-values
-          if y>0, valign='bottom';
-          else    valign='top';
-          end
-          if ~isnan(y)
-            text('Position',[FSCOMP.x(f),0],'String',sprintf('%.*f',pw(ax),y),'Parent',fighandles.axes(ax),'Tag','valuetext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{1},'ButtonDownFcn',barclick)
-            text('Position',[FSCOMP.x(f),0],'String',sprintf('%d',sum(isfinite(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f)))),'Parent',fighandles.axes(ax),'Tag','nrtext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{2},'ButtonDownFcn',barclick)
-          end
-          if ~PRM.calc_diffs && (ax==6 || ax==9)
-            line([0.2 max(FSCOMP.x)+0.8],[0 0],'Parent',fighandles.axes(ax),'Color',[0.5 0.5 0.5],'LineStyle',':')
-          end
-          % Update waitbar
-          if getappdata(handles.waitbar,'canceling')
-            return
-          else
-            step=step+2;
-          end
-          waitbar(step/steps,handles.waitbar,sprintf('%1.0f%% Done',100*step/steps))
+          
         end
-
-        %%% Stat-test %%%
-        stattest
       end
-
-      %%% Fix Y-Limits %%%
-      if ~PRM.calc_diffs
-        % set y-axes for k and lambda for each fitting method the same
-        set([fighandles.axes(4) fighandles.axes(5)],'YLim',[0 max(max( [1.05 get(fighandles.axes(4),'YLim') get(fighandles.axes(5),'YLim')] ))])
-        %%% FRAGMENTATION TEMPORARY !!! %%%
-        %set([fighandles.axes(7) fighandles.axes(8)],'YLim',[0 max(max( [get(fighandles.axes(7),'YLim') get(fighandles.axes(8),'YLim')] ))])
-        set([fighandles.axes(6) fighandles.axes(9)],'YLimMode','auto')
-      else
-        set(fighandles.axes,'YLimMode','auto')
-      end
-
     end
   end
 end
@@ -1407,7 +1460,7 @@ delete(handles.waitbar)
     x=x(order,:);
     ymax=ymax(order);
     yaxint=abs(diff([max(ymaxbars) min(yminbars)]));
-    increment=yaxint*cumsum(0.075*ones(1,files_group));
+    increment=yaxint*cumsum(0.1*ones(1,files_group));
 
     for pair=1:pairs
       % Decide Which Type of Test:
@@ -1428,15 +1481,22 @@ delete(handles.waitbar)
               vartype='equal';
             end
             [h,p]=ttest2(set1,set2,PRM.alphatest,[],vartype);
-          catch h=0; p=NaN;
+          catch
+            h=0; p=NaN;
           end
           if isnan(h), h=0; p=NaN; end
         else
           try
             bootstat=bootstrp(PRM.bsamp,@studt,set1,set2);
-            p=2*min(sum(bootstat<=0),sum(bootstat>0))/PRM.bsamp;
-            h=double(p<=PRM.alphatest);
-          catch h=0; p=NaN;
+            if all(~bootstat)
+              p=1;
+              h=0;
+            else
+              p=2*min(sum(bootstat<=0),sum(bootstat>0))/PRM.bsamp;
+              h=double(p<=PRM.alphatest);
+            end
+          catch
+            h=0; p=NaN;
           end
         end
         FSCOMP.bars(ev,per).p_t(statpairs(pair,1),statpairs(pair,2),ax)=p;
@@ -1528,7 +1588,8 @@ function [values,p]=values_norm(values,PRM)
   end
   % Test for Normality
   try [h,p]=lillietest(values,PRM.alphanorm);
-  catch p=NaN;
+  catch
+    p=NaN;
   end
 end
 function disp_errordlg(message)

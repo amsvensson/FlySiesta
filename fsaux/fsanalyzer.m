@@ -73,7 +73,7 @@ FlySiesta_version=fsabout('version');
   state={'off','on'};
   set(handles.advancedpanel,'Visible',state{get(handles.advancedoptions,'Value')+1})        % - " -
   set(handles.s_advancedpanel,'Visible',state{get(handles.advancedoptions,'Value')+1})      % - " -
- set(handles.method,'UserData',3)                                                           % Default nr of reps for non-linear Weibull fit
+ set(handles.method,'UserData',1)                                                           % Default nr of reps for non-linear Weibull fit
   handles.fitmethods=true(3,1);                                                             % Default, perform all fit methods
  movegui(handles.figure,'center')
  set(findobj(handles.figure,'Units','pixels'),'Units','characters')
@@ -927,7 +927,7 @@ end
       delete(findobj([preview.axes],'Tag','flyplot'))
       delete(findobj([preview.axes],'Tag','whitebox'))
       if ~logical(exindex(value))
-        fill([analysis_range(1) analysis_range(1) analysis_range(2)-1 analysis_range(2)-1]-0.5,[0.001 max([1.15*max(activity(:,value)) 1]) max([1.15*max(activity(:,value)) 1]) 0.001],[1 1 1],'Parent',preview.axes,'Tag','whitebox','LineStyle','-','Clipping','on')
+        fill([analysis_range(1) analysis_range(1) analysis_range(2)+1 analysis_range(2)+1],[0.001 max([1.15*max(activity(:,value)) 1]) max([1.15*max(activity(:,value)) 1]) 0.001],[1 1 1],'Parent',preview.axes,'Tag','whitebox','LineStyle','-','Clipping','on')
       end
       [xstairs,ystairs]=stairs([1 1:size(activity,1) size(activity,1)],[0; activity(:,value); 0]);
       fill(xstairs,ystairs,[0.1 0.1 0.5],'Tag','flyplot','EdgeColor',[0.1 0.1 0.5])
@@ -1007,7 +1007,11 @@ if ready
       flysiesta
 
     else
-      close(handles.figure)
+      if strcmpi(eventdata,'KeepOpen')
+        % Do nothing, keep fsanalyzer open
+      else
+        close(handles.figure)
+      end
     end
   else
     h_warn=warndlg({'' '              Analysis Aborted!'  '    Please Restart Analysis to Obtain Results.' ''},'Failed Analysis','modal');
@@ -1146,7 +1150,7 @@ if ~isempty(filelist)
   end
   if all(same_data_rec)
     timestr=num2str(time(1));
-    if length(timestr)<4
+    while length(timestr)<4
       timestr=['0' timestr];
     end
     recstartvec=datevec([datestr(date(1)) ' ' timestr(1:2) ':' timestr(3:4)]);
@@ -1449,9 +1453,16 @@ for period=1:2
   end
 end
 
-% Create waitbar %
+% Create waitbar (but first delete any previous (from debugging usually)) %
+set(0,'ShowHiddenHandles','on')
+chroot=get(0,'Children');
+chName=get(chroot,'Name');
+if ~iscell(chName), chName={chName}; end
+delete(chroot(~cellfun(@isempty,strfind(chName,'Analyzing '))))
+set(0,'ShowHiddenHandles','off')
+
 figurePosition=getpixelposition(gcf);
-h_waitbar=waitbar(0,'','Name','Analyzing Data...','CreateCancelBtn','setappdata(gcbf,''canceling'',1)','Pointer','watch');%,'WindowStyle','modal');
+h_waitbar=waitbar(0,'','Name',sprintf('Analyzing %s',EXPDATA.name),'CreateCancelBtn','setappdata(gcbf,''canceling'',1)','Pointer','watch');%,'WindowStyle','modal');
 dlgPosition=getpixelposition(h_waitbar);
 setpixelposition(h_waitbar,[figurePosition(1)+(figurePosition(3)-dlgPosition(3))/2 figurePosition(2)+(figurePosition(4)-dlgPosition(4))/2 dlgPosition(3:4)])
 setappdata(h_waitbar,'canceling',0)
@@ -1480,7 +1491,7 @@ for period=1:2
       end
       matrix=matrix(logical_periods(:,period),:);
       real_indices=[1:size(logical_periods,1)]';
-      real_indices=real_indices(logical_periods(:,period));
+      real_indices=reshape(real_indices(logical_periods(:,period)),[],EXPDATA.days);
       DISTR(event,period)=distrfits(matrix);
     else
       break
@@ -1527,33 +1538,45 @@ for fly=1:EXPDATA.number_of_flies(1)
   ibis=end_ibis-start_ibis+1;
   start_ibis=real_indices(start_ibis);
 
-  ibis=ibis(ibis<hours_period(period)*60);
-  start_ibis=start_ibis(ibis<hours_period(period)*60);
+  ibis=ibis(ibis<=hours_period(period)*60);
+  start_ibis=start_ibis(ibis<=hours_period(period)*60);
   if STRUCT.startpoint>1
     keep=(ibis>=STRUCT.startpoint);
     ibis=ibis(keep);
     start_ibis=start_ibis(keep);
   end
   
+  % Find Day-index
+  day_index=NaN(size(ibis));
+  for d=1:EXPDATA.days
+    day_index(ismember(start_ibis,real_indices(:,d)))=d;
+  end
+  
   % Save
   if ~isempty(ibis)
-    STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) fly];
+    STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
   end
   
   % Calculate B and M
-  ibis_sorted{fly}=sort(ibis);
-  try 
-    nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
-    dur_corr=ibis-STRUCT.startpoint;
-    STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
-    STRUCT.M(fly)=1/(length(dur_corr)-1) * sum( (dur_corr(1:end-1)-mean(dur_corr(1:end-1))) .* (dur_corr(2:end)-mean(dur_corr(2:end))) / ( std(dur_corr(1:end-1))*std(dur_corr(2:end)) ) );
-    mean_ibis(fly)=mean(dur_corr,1);
-  catch
-    for g=[all_flies female male]
-      STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+  if length(unique(day_index))==EXPDATA.days
+    ibis_sorted{fly}=sort(ibis);
+    try
+      dur_corr=ibis-STRUCT.startpoint;
+      mem=NaN(1,EXPDATA.days);
+      for d=1:EXPDATA.days
+        dur_corr_day=dur_corr(day_index==d);
+        mem(d)=1/(length(dur_corr_day)-1) * sum( (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) );
+      end
+      STRUCT.M(fly)=mean(mem);
+      STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
+      nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
+      mean_ibis(fly)=mean(dur_corr,1);
+    catch
+      for g=[all_flies female male]
+        STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+      end
     end
   end
-  
 end
 STRUCT.B(isinf(STRUCT.B))=NaN;
 STRUCT.M(isinf(STRUCT.M))=NaN;

@@ -249,7 +249,7 @@ set(handles.figure,'Visible','on')
           for per=1:2
             for ev=1:size(DISTR,1)
               % matrix
-              POOLDISTR(ev,per).matrix=[POOLDISTR(ev,per).matrix ; [DISTR(ev,per).matrix(:,1) DISTR(ev,per).matrix(:,2)+POOLEXP.number_of_flies(1)*POOLEXP.days*24*60]];
+              POOLDISTR(ev,per).matrix=[POOLDISTR(ev,per).matrix ; [DISTR(ev,per).matrix(:,1) DISTR(ev,per).matrix(:,2)+POOLEXP.number_of_flies(1)*POOLEXP.days*24*60 DISTR(ev,per).matrix(:,3) DISTR(ev,per).matrix(:,4)+POOLEXP.number_of_flies(1)]];
               % histogram
               lengthpool=size(POOLDISTR(ev,per).histogram,1);
               lengthbi=size(DISTR(ev,per).histogram,1);

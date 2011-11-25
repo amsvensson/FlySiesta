@@ -4,7 +4,7 @@
 
                    http://www.neural-circuits.org/flysiesta
  
-Copyright (C) 2007-2010 Amanda Sorribes, Universidad Autonoma de Madrid, and
+Copyright (C) 2007-2011 Amanda Sorribes, Universidad Autonoma de Madrid, and
                         Consejo Superior de Investigaciones Cientificas (CSIC).
 
 For info on future releases, comments, bug reports, improvements or feature
