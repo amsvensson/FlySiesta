@@ -1214,11 +1214,6 @@ MyStyle=get(handles.colors,'UserData');
         fighandles.axes(ax)=axes('Parent',barfigs(ev,per),'Units','pixels','Position',[xax(ax) yax(ax) wax hax],'NextPlot','add','Box','on','TickLength',[0.005 0.025],'FontSize',7,'XLim',[0.2 max(FSCOMP.x)+0.8],'XTick',FSCOMP.x,'XTickLabel',FSCOMP.names,'Color',axescolor(per,:),'YLim',[yminaxes ymaxaxes*(1+gsize*0.1)]);
         title(fighandles.axes(ax),titlestring{ax},'FontSize',8,'Units','normalized','Position',[0.5 1 0]);
       end
-      if ~PRM.calc_diffs
-        for iline=[4 5]
-          line([0.2 max(FSCOMP.x)+0.8],[1 1],'Parent',fighandles.axes(iline),'Color',[0.5 0.5 0.5],'LineStyle',':')
-        end
-      end
       set(fighandles.axes,'Units','normalized')
      % menus
       fighandles.menu_file=uimenu('Parent',barfigs(ev,per),'Tag','menu_file','Label','&File','Callback',[]);
@@ -1406,8 +1401,13 @@ for g=1:length(FSCOMP.group)
                 text('Position',[FSCOMP.x(f),0],'String',sprintf('%.*f',pw(ax),y),'Parent',fighandles.axes(ax),'Tag','valuetext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{1},'ButtonDownFcn',barclick)
                 text('Position',[FSCOMP.x(f),0],'String',sprintf('%d',sum(isfinite(FSCOMP.bars(ev,per).(handles.barfields{ax})(flies,f)))),'Parent',fighandles.axes(ax),'Tag','nrtext','UserData',f,'FontSize',7,'Color','k','HorizontalAlignment','center','VerticalAlignment',valign,'Visible',bartextstate{2},'ButtonDownFcn',barclick)
               end
-              if ~PRM.calc_diffs && (ax==6 || ax==9)
-                line([0.2 max(FSCOMP.x)+0.8],[0 0],'Parent',fighandles.axes(ax),'Color',[0.5 0.5 0.5],'LineStyle',':')
+              neutral_line=[NaN NaN NaN 0 1 NaN 0 0.5 0];
+              if ~PRM.calc_diffs && isfinite(neutral_line(ax))
+                hline=line([0.2 max(FSCOMP.x)+0.8],[neutral_line(ax) neutral_line(ax)],'Parent',fighandles.axes(ax),'Color',[0.5 0.5 0.5],'LineStyle',':');
+                if logical(neutral_line(ax))
+                  axCh=get(fighandles.axes(ax),'Children');
+                  set(fighandles.axes(ax),'Children',[axCh(2:end) ; axCh(1)])
+                end
               end
               % Update waitbar
               if getappdata(handles.waitbar,'canceling')
