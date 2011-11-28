@@ -73,7 +73,7 @@ FlySiesta_version=fsabout('version');
  movegui(handles.figure,'center')
 % ! TEMPORARY
 handles.evperselect=[0 1 ; 0 0 ; 0 1 ; 0 0];
-handles.varselect=[1 1 1 1 0 1 0 1 1]; %[1 0 0 1 0 1 0 0 1];
+handles.varselect=[1 1 1 1 1 1 1 1 1]; %[1 0 0 1 0 1 0 0 1];
 %set(handles.evperselect,'UserData',[0 1 ; 0 0 ; 0 1 ; 0 0]);
 % !
 
@@ -95,7 +95,7 @@ set(handles.colors,'UserData',MyStyle)
  
 % Create File Structure
 FILES=struct('EXPDATA',[],'DISTR',[],'selection',[],'statgen',1,'statcond',1,'statgroup',1,'statdate',1);
-handles.barfields={'total' 'num' 'dur' 'klin' 'knl' 'B' 'llin' 'lnl' 'M'};
+handles.barfields={'total' 'num' 'dur' 'B' 'klin' 'llin' 'M' 'DFA' 'F'};
 
 setappdata(handles.figure,'files',FILES)
 handles.output = hObject;  % Choose default command line output for fscomparer
@@ -890,7 +890,7 @@ p_t=NaN(PRM.nrfiles,PRM.nrfiles,length(handles.barfields));
 for f=1:PRM.nrfiles
   p_t(f,f,:)=1;
 end
-bars(1:4,1:2)=struct('total',mbars,'num',mbars,'dur',mbars,'klin',mbars,'knl',mbars,'B',mbars,'llin',mbars,'lnl',mbars,'M',mbars,'norm_p',NaN(length(handles.barfields),PRM.nrfiles),'p_t',p_t);
+bars(1:4,1:2)=struct('total',mbars,'num',mbars,'dur',mbars,'B',mbars,'klin',mbars,'llin',mbars,'M',mbars,'DFA',mbars,'F',mbars,'norm_p',NaN(length(handles.barfields),PRM.nrfiles),'p_t',p_t);
 warning off stats:lillietest:OutOfRangeP
 
 for f=1:PRM.nrfiles
@@ -907,7 +907,8 @@ for f=1:PRM.nrfiles
       bars(4,per).total(flyid{f},f)=sum(~sleep(period{per},:),1)/days;
       for ev=1:4
         distr=FILES(f).DISTR(ev,per);
-        % Number, Durations and Fragmentation of bouts/ibis
+        
+        % Number and Mean Durations
         bouts=NaN(days*24*60,FILES(f).EXPDATA.number_of_flies(1));
         bouts([distr.matrix(:,2)])=distr.matrix(:,1);
         bouts=bouts(period{per},selection{f});
@@ -915,20 +916,17 @@ for f=1:PRM.nrfiles
         num(~logical(num))=NaN;
         bars(ev,per).num(flyid{f},f)=num';
         bars(ev,per).dur(flyid{f},f)=nanmean(bouts,1);
-        %bars(ev,per).frag(flyid{f},f)=num'./bars(ev,per).total(selection{f},f);
+        
         % Burst Parameters
         bars(ev,per).B(flyid{f},f)=distr.B(selection{f});
-        bars(ev,per).knl(flyid{f},f)=distr.wnl.k(selection{f});
         bars(ev,per).klin(flyid{f},f)=distr.wlin.k(selection{f});
-        
-        %%% FRAGMENTATION TEMPORARY !!! %%%
-        bars(ev,per).lnl(flyid{f},f)=num'./bars(ev,per).total(selection{f},f);
-        %=distr.wnl.lambda(selection{f});
-        
         bars(ev,per).llin(flyid{f},f)=distr.wlin.lambda(selection{f});
+        
+        % Memory and Fragmentation
         bars(ev,per).M(flyid{f},f)=distr.M(selection{f});
-        
-        
+        bars(ev,per).DFA(flyid{f},f)=distr.DFA(selection{f});
+        bars(ev,per).F(flyid{f},f)=distr.F(selection{f});
+                
         % Remove Outliers (NaN them) & Run Lilliefors Test of Normality on Remaining Values
         if ~PRM.calc_diffs
           for ifield=1:length(handles.barfields)
@@ -970,7 +968,7 @@ p_t=NaN(PRM.nrfiles/2,PRM.nrfiles/2,length(handles.barfields));
 for f=1:PRM.nrfiles/2
   p_t(f,f,:)=1;
 end
-diffbars(1:4,1:2)=struct('total',mbars,'num',mbars,'dur',mbars,'klin',mbars,'knl',mbars,'B',mbars,'llin',mbars,'lnl',mbars,'M',mbars,'norm_p',norm_p,'p_t',p_t);
+diffbars(1:4,1:2)=struct('total',mbars,'num',mbars,'dur',mbars,'B',mbars,'klin',mbars,'llin',mbars,'M',mbars,'DFA',mbars,'F',mbars,'norm_p',norm_p,'p_t',p_t);
 
 isseparator=false(1,length(FSCOMP.group));
 for g=1:length(FSCOMP.group)
@@ -1197,7 +1195,7 @@ MyStyle=get(handles.colors,'UserData');
   barfigs=NaN(4,2);
   evstring={'Activity Bouts' 'Sleep Bouts' 'IAIs' 'ISIs'};
   perstring={'Light' 'Dark'};
-  titlestring={'Total Time per Period (min)' 'Number of Events per Period' 'Mean Duration of Events (min)' 'k, linear Weibull fit' 'k, non-linear Weibull fit' 'B  (Burst Parameter)' '\lambda, linear Weibull fit' 'Fragmentation Index' 'M (Memory Parameter)'};%'\lambda, non-linear Weibull fit' 
+  titlestring={'Total Time per Period (min)' 'Number of Events per Period' 'Mean Duration of Events (min)' 'B  (Burst Parameter)' 'k, linear Weibull fit' '\lambda, linear Weibull fit' 'M (Short-term Memory)' 'DFA (Long-term Memory)' 'Fragmentation Index'};
   for ev=1:4
     for per=1:2
      % figure
@@ -1234,12 +1232,12 @@ MyStyle=get(handles.colors,'UserData');
           fighandles.tools_hist_tot= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_tot' ,'Label','Total minutes per Period'   ,'UserData','total','Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
           fighandles.tools_hist_num= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_num' ,'Label','Number of Events per Period','UserData','num'  ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
           fighandles.tools_hist_dur= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_dur' ,'Label','Mean Duration of Events'    ,'UserData','dur'  ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
-          fighandles.tools_hist_klin=uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_klin','Label','k, linear fit'              ,'UserData','klin' ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
-          fighandles.tools_hist_knl= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_knl' ,'Label','k, non-linear fit'          ,'UserData','knl'  ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
           fighandles.tools_hist_B=   uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_B'   ,'Label','B, ''Burst Parameter'''     ,'UserData','B'    ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
+          fighandles.tools_hist_klin=uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_klin','Label','k, linear fit'              ,'UserData','klin' ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
           fighandles.tools_hist_llin=uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_llin','Label','lambda, linear fit'         ,'UserData','llin' ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
-          fighandles.tools_hist_lnl= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_lnl' ,'Label','lambda, non-linear fit'     ,'UserData','lnl'  ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
           fighandles.tools_hist_M=   uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_M'   ,'Label','M, ''Memory Parameter'''    ,'UserData','M'    ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
+          fighandles.tools_hist_DFA= uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_DFA' ,'Label','k, non-linear fit'          ,'UserData','DFA'  ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
+          fighandles.tools_hist_F=   uimenu('Parent',fighandles.tools_hist,'Tag','tools_hist_F'   ,'Label','lambda, non-linear fit'     ,'UserData','F'    ,'Callback','fscomparer(''tools_histfield_Callback'',gcbo)');
         fighandles.tools_showonbars=uimenu('Parent',fighandles.menu_tools,'Tag','tools_showonbars','Label','Display On Bars','Callback',[],'Separator','on');
           fighandles.tools_showmeans=uimenu('Parent',fighandles.tools_showonbars,'Tag','tools_showmeans','Label','Show Mean Values','Callback','fscomparer(''tools_showmeans_Callback'',gcbo)','UserData','nr');
           fighandles.tools_showflies=uimenu('Parent',fighandles.tools_showonbars,'Tag','tools_showflies','Label','Show Number of Flies','Callback','fscomparer(''tools_showflies_Callback'',gcbo)');
@@ -1272,12 +1270,12 @@ MyStyle=get(handles.colors,'UserData');
         fighandles.anova_tot= uimenu('Parent',fighandles.menu_anova,'Tag','anova_tot' ,'Label','Total minutes per Period'   ,'UserData','total','Callback','fscomparer(''anovamultcompare_Callback'',gcbo)','Separator','on');
         fighandles.anova_num= uimenu('Parent',fighandles.menu_anova,'Tag','anova_num' ,'Label','Number of Events per Period','UserData','num'  ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
         fighandles.anova_dur= uimenu('Parent',fighandles.menu_anova,'Tag','anova_dur' ,'Label','Mean Duration of Events'    ,'UserData','dur'  ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
-        fighandles.anova_klin=uimenu('Parent',fighandles.menu_anova,'Tag','anova_klin','Label','k, linear fit'              ,'UserData','klin' ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
-        fighandles.anova_knl= uimenu('Parent',fighandles.menu_anova,'Tag','anova_knl' ,'Label','k, non-linear fit'          ,'UserData','knl'  ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
         fighandles.anova_B=   uimenu('Parent',fighandles.menu_anova,'Tag','anova_B'   ,'Label','B, ''Burst Parameter'''     ,'UserData','B'    ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
+        fighandles.anova_klin=uimenu('Parent',fighandles.menu_anova,'Tag','anova_klin','Label','k, linear fit'              ,'UserData','klin' ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
         fighandles.anova_llin=uimenu('Parent',fighandles.menu_anova,'Tag','anova_llin','Label','lambda, linear fit'         ,'UserData','llin' ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
-        fighandles.anova_lnl= uimenu('Parent',fighandles.menu_anova,'Tag','anova_lnl' ,'Label','lambda, non-linear fit'     ,'UserData','lnl'  ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
         fighandles.anova_M=   uimenu('Parent',fighandles.menu_anova,'Tag','anova_M'   ,'Label','M, ''Memory Parameter'''    ,'UserData','M'    ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
+        fighandles.anova_DFA= uimenu('Parent',fighandles.menu_anova,'Tag','anova_DFA' ,'Label','k, non-linear fit'          ,'UserData','DFA'  ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
+        fighandles.anova_F=   uimenu('Parent',fighandles.menu_anova,'Tag','anova_F'   ,'Label','lambda, non-linear fit'     ,'UserData','F'    ,'Callback','fscomparer(''anovamultcompare_Callback'',gcbo)');
       
       fighandles.menu_programs=uimenu('Parent',barfigs(ev,per),'Tag','menu_programs','Label','&Programs','Callback',[]);
         fighandles.programs_flysiesta=uimenu('Parent',fighandles.menu_programs,'Tag','programs_flysiesta','Label','FlySiesta Welcome Center','Callback','flysiesta');
@@ -1298,8 +1296,8 @@ MyStyle=get(handles.colors,'UserData');
         fighandles.fscomp=get(handles.savebox,'String');
         set(barfigs(ev,per),'UserData',fighandles)
     end
+    end
   end
-end
 end
 
 function plot_patterns(FSCOMP,PRM,handles)
