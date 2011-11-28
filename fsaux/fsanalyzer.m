@@ -78,7 +78,7 @@ FlySiesta_version=fsabout('version');
  movegui(handles.figure,'center')
  set(findobj(handles.figure,'Units','pixels'),'Units','characters')
  set(get(handles.figure,'Children'),'HandleVisibility','callback')
-
+ 
 % Load Button Icons
 try load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
 end
@@ -1057,7 +1057,7 @@ for i=1:size(dirparts,1)
 end
 
 dirparts=dirparts(:);
-rpath=[];
+rpath=['.' filesep];
 for i=1:size(dirparts,1)
   rpath=[rpath dirparts{i}];
 end
@@ -1309,7 +1309,7 @@ SETTINGS=getappdata(handles.figure,'settings');
 % Tab 1
 % SETTINGS.filelist         (Already set)
 % Convert dirlist to relative paths
-if ~strcmp(SETTINGS.dirlist{1}(1:2),'..')
+if ~strcmp(SETTINGS.dirlist{1}(1),'.')
   for i=1:length(SETTINGS.dirlist)
     SETTINGS.dirlist{i}=relative_path(fileparts(get(handles.saveinput,'String')),SETTINGS.dirlist{i});
   end
