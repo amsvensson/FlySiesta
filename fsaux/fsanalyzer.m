@@ -1517,6 +1517,8 @@ STRUCT=struct('matrix',[],'startpoint',[],'histogram',[],'survival_histogram',[]
       'wlin',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[]),...
          'B',NaN(1,EXPDATA.number_of_flies(1)),...
          'M',NaN(1,EXPDATA.number_of_flies(1)),...  
+         'DFA',NaN(1,EXPDATA.number_of_flies(1)),...  
+         'F',NaN(1,EXPDATA.number_of_flies(1)),...  
          'weibull_pdf',[],'weibull_survival',[],'weibull_lin',[]);
 
 if event==sb; STRUCT.startpoint=EXPDATA.sleep_threshold;
@@ -1557,7 +1559,9 @@ for fly=1:EXPDATA.number_of_flies(1)
     STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
   end
   
-  % Calculate B and M
+  STRUCT.F(fly)=length(ibis)/sum(ibis);
+  
+  % Calculate B, M and DFA
   if length(unique(day_index))==EXPDATA.days
     ibis_sorted{fly}=sort(ibis);
     try
@@ -1578,9 +1582,12 @@ for fly=1:EXPDATA.number_of_flies(1)
       end
     end
   end
+ 
 end
+STRUCT.F(isinf(STRUCT.F))=NaN;
 STRUCT.B(isinf(STRUCT.B))=NaN;
 STRUCT.M(isinf(STRUCT.M))=NaN;
+STRUCT.DFA(isinf(STRUCT.DFA))=NaN;
 
 halfbin=1/2; % To compensate for binsize effects on survival histograms
 STRUCT.histogram=NaN(min([parameters(1) max(nlargest)]),EXPDATA.number_of_flies(1));

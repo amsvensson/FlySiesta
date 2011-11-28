@@ -600,7 +600,7 @@ fsabout;
 end
 
 
-%% Start Comparison %%
+%% Start Comparison %%    %#TODO
 function start_Callback(hObject, eventdata, handles)
 
 % Remove Possibly Any Old, Cancelled Waitbars
@@ -1473,7 +1473,7 @@ delete(handles.waitbar)
           set2=zeros(size(set1));
         end
         if parametric
-          try
+          try   %#TODO
             vartype='unequal';
             hvar=vartest2(set1,set2);
             if ~PRM.pairedtest && logical(hvar) && ~hvar
@@ -1485,7 +1485,7 @@ delete(handles.waitbar)
           end
           if isnan(h), h=0; p=NaN; end
         else
-          try
+          try   %#TODO
             bootstat=bootstrp(PRM.bsamp,@studt,set1,set2);
             if all(~bootstat)
               p=1;
@@ -1560,7 +1560,7 @@ delete(handles.waitbar)
       end
     end
     
-    function tstat=studt(x,y)
+    function tstat=studt(x,y)   %#TODO
       tstat=(nanmean(x)-nanmean(y)) ./ sqrt( nanvar(x)/sum(~isnan(x)) + nanvar(y)/sum(~isnan(y)) );
     end
     
