@@ -78,7 +78,8 @@ handles.varselect=[1 1 1 1 0 1 0 1 1]; %[1 0 0 1 0 1 0 0 1];
 % !
 
 % Load Button Icons & Colors
-try load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
+try 
+  load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
 end
 set(handles.help,'CData',help_mine,'ToolTip','Online User Guide','Background',get(handles.bottompanel,'BackgroundColor'))
 set(handles.info,'CData',about_mine,'ToolTip','About','Background',get(handles.bottompanel,'BackgroundColor'))

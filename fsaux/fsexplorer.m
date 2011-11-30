@@ -668,8 +668,10 @@ function fittype_commonfcn(value,handles)
 set(handles.methodsep,'UserData',value)
 fittype={'type1' 'type2'};
 % tabaxes
-try   set(findobj(handles.tabaxes,'Tag',fittype{value+1}),'Visible','off')
-catch set(findobj(handles.tabaxes,'Tag',fittype{value-1}),'Visible','off')
+try
+  set(findobj(handles.tabaxes,'Tag',fittype{value+1}),'Visible','off')
+catch
+  set(findobj(handles.tabaxes,'Tag',fittype{value-1}),'Visible','off')
 end
 set(findobj(handles.tabaxes,'Tag',fittype{value}),'Visible','on');
 if get(handles.wBbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wB'),'Visible','off'); end
@@ -677,8 +679,10 @@ if get(handles.wnlbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wn
 if get(handles.wlinbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wlin'),'Visible','off'); end
 % resultaxes
 if any(handles.tab==[2 3])
-  try   set(findobj(handles.resultaxes,'Tag',fittype{value+1}),'Visible','off')
-  catch set(findobj(handles.resultaxes,'Tag',fittype{value-1}),'Visible','off')
+  try
+    set(findobj(handles.resultaxes,'Tag',fittype{value+1}),'Visible','off')
+  catch
+    set(findobj(handles.resultaxes,'Tag',fittype{value-1}),'Visible','off')
   end
   set(findobj(handles.resultaxes,'Tag',fittype{value}),'Visible','on')
 end
@@ -745,12 +749,16 @@ for fitname={'wB' 'wnl' 'wlin'};
 end
  % Radiobuttons
  fittype={'type1' 'type2'};
- try   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
- catch set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
+ try
+   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
+ catch
+   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
  end
  if any(handles.tab==[2 3])
-   try   set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
-   catch set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
+   try
+     set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
+   catch
+     set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
    end
  end
  
@@ -790,11 +798,15 @@ resultplot_type2(value,dataset,handles)
    % Individual Fits (fittype 1)
     yfit=fitfcn(xfit,w.k(value),w.lambda(value));
     for i=1:length(value)
-      try yend=find(xfit==x(sum(isfinite(y(:,i)))));
-      catch yend=1;
+      try
+        yend=find(xfit==x(sum(isfinite(y(:,i)))));
+      catch
+        yend=1;
       end
-      try yfit(yend+2:end,i)=NaN;
-      catch yfit(yend:end,i)=NaN;
+      try
+        yfit(yend+2:end,i)=NaN;
+      catch
+        yfit(yend:end,i)=NaN;
       end
     end
     line(xfit,yfit,'Parent',ax,'UserData',dataid(dataset),'DisplayName',fitname{f},'Tag',fittype{1}, ...
@@ -863,8 +875,10 @@ end
     [B(f),k(f),lambda(f)]=fit_supermean(STRUCT.survival_histogram(STRUCT.startpoint:end,value),n,mu,sigma,f);
     yfit=fitfcn(xfit,k(f),lambda(f));
     yend=find(xfit==x(sum(y_n>=n)));
-    try yfit(yend+2:end)=NaN;
-    catch yfit(yend:end)=NaN;
+    try
+      yfit(yend+2:end)=NaN;
+    catch
+      yfit(yend:end)=NaN;
     end
     line(xfit,yfit,'Parent',ax,'UserData',dataid(dataset),'DisplayName',fitname{f},'Tag',fittype{1}, ...
       Style.Fits(f));

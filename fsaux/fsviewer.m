@@ -85,7 +85,8 @@ movegui(handles.figure,'center')
  set(findobj(handles.figure,'Type','axes'),'Units','normalized')
 
 % Load Button Icons & Get Style-structure for Plots
-try load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
+try 
+  load('-mat',[fileparts(mfilename('fullpath')) filesep 'fsinit.dat'])
 end
 set(handles.stattest,'ToolTip','Start Statistical Test','CData',stattest_play_star)
 set(handles.color,'ToolTip','Change Colors','CData',color_swatch)
@@ -1547,20 +1548,26 @@ if do_test
     % Check for normality %
     for d=1:2
       warning off stats:lillietest:OutOfRangeP
-      try  [h_lillie(d),p_lillie(d)]=lillietest(x{d});%,alpha);
-      catch h_lillie(d)=0;
+      try  
+        [h_lillie(d),p_lillie(d)]=lillietest(x{d});%,alpha);
+      catch
+        h_lillie(d)=0;
         p_lillie(d)=NaN;
       end
     end
     % Test if populations are different %
     if any(h_lillie)
-      try [h_ks(ri),p_ks(ri)]=kstest2(x{1},x{2},alpha);
-      catch  h_ks(ri)=NaN;
+      try 
+        [h_ks(ri),p_ks(ri)]=kstest2(x{1},x{2},alpha);
+      catch
+        h_ks(ri)=NaN;
         p_ks(ri)=NaN;
       end
     else
-      try [h_t(ri),p_t(ri)]=ttest2(x{1},x{2},alpha);
-      catch  h_t(ri)=NaN;
+      try 
+        [h_t(ri),p_t(ri)]=ttest2(x{1},x{2},alpha);
+      catch
+        h_t(ri)=NaN;
         p_t(ri)=NaN;
       end
     end
