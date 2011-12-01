@@ -868,7 +868,7 @@ if length(value)>=n
 else
   text('Units','normalized','Position',[0.025,0.95],'String',sprintf('Select More Flies (at least %d)',n),'Parent',ax, ...
        'UserData',dataid(dataset),'FontSize',8,'Color',[0.5 0.5 0.5],'HorizontalAlignment','left','VerticalAlignment','bottom')
-
+  x_n=1;
 end
   function plotfits(w,f)
    % Fit to Mean (fittype 1)
@@ -1074,9 +1074,11 @@ if get(handles.xscale,'Value') == 1
   set(ax,'XLim',[-0.1 max(get(ax,'UserData'))],'XTickMode','auto','XTickLabelMode','auto')
   % Adjust
   ticklabels=get(ax,'XTick');
-  ticklabels(1)=startpoint;
-  newticks=ticklabels-startpoint;
-  set(ax,'XTick',newticks,'XTickLabel',ticklabels)
+  if max(ticklabels)>startpoint
+    ticklabels(1)=startpoint;
+    newticks=ticklabels-startpoint;
+    set(ax,'XTick',newticks,'XTickLabel',ticklabels)
+  end
 else
   set(ax,'XLim',[0.4 max(get(ax,'UserData'))],'XTickMode','auto','XTickLabelMode','auto')
 end
