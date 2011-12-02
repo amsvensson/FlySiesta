@@ -1569,6 +1569,7 @@ for fly=1:EXPDATA.number_of_flies(1)
       end
       STRUCT.M(fly)=mean(mem);
       STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
+      STRUCT.DFA(fly)=DFA(dur_corr,false);
       nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
       mean_ibis(fly)=mean(dur_corr,1);
     catch
