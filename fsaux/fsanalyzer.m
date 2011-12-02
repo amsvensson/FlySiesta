@@ -1080,8 +1080,9 @@ end
 % Call Toolbox Function
 [EXPDATA.activity,IDs,envVars]=readDamsData(filelist,dirlist,EXPDATA.number_of_flies(1));
 
-% #TODO To be changed in future versions - Join into one id matrix! 
-% (Creates compatibility issues with other FS apps though.)
+% #TODO To be changed in future versions(?) - Join into one id matrix! 
+% (Complicated because it creates compatibility issues with other FS apps - have to change them all at once.
+% That in turn will create broken backwards compatibility - would have to reanalyze all files!)
 EXPDATA.id_index=IDs(1,:);
 EXPDATA.monitor_index=IDs(2,:);
 
@@ -1159,7 +1160,7 @@ if hObject~=handles.infodirbutton
   analysis_times(handles)
 end
 
-% Automaticly exclude flies with no activity the last day (and beyond)
+% Automatically exclude flies with no activity the last day (and beyond)
 SETTINGS=getappdata(handles.figure,'settings');
 beginlastday=SETTINGS.analysis_points(get(handles.enddate,'UserData')-1);
 if ~isempty(beginlastday)
