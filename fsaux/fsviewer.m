@@ -539,6 +539,12 @@ if ~isempty(darkboxes)
     set(get(get(darkboxes(i),'Annotation'),'LegendInformation'),'IconDisplayStyle','off')
   end
 end
+errorshades=findobj(hf,'Tag','ErrorShade');
+if ~isempty(darkboxes)
+  for i=1:length(errorshades)
+    set(get(get(errorshades(i),'Annotation'),'LegendInformation'),'IconDisplayStyle','off')
+  end
+end
 p_star=findobj(hf,'-regexp','Tag','Star_p');
 tstars=findobj(hf,'Tag','tStar');
 if ~isempty(tstars)
@@ -1244,16 +1250,19 @@ set(handles.tabpanel,'UserData',plot_status)
 
   function generate_patterns(ev)
     delete(findobj([h_full(ev) h_day(ev)],'UserData',dataid(dataset)))
+    
     x=0.5:48*FD(1).days(dataset)-0.5;
-     line(x,FD(ev).full.means(x+0.5,dataset,type(ev)),'Parent',h_full(ev),'UserData',dataid(dataset),'DisplayName',get(handles.(sprintf('name%d',dataset)),'String'), ...
-       'Color',Style.DuoColor(dataset,:),Style.Viewer.Patterns);
-     he=errorbar(x,FD(ev).full.means(x+0.5,dataset,type(ev)),FD(ev).full.sems(x+0.5,dataset,type(ev)),'Parent',h_full(ev),'UserData',dataid(dataset));
-       set(he,'Color',Style.DuoColor(dataset,:),Style.Viewer.PatternsError)
+    Style.Viewer.Pattern.LineWidth=1.5;
+    Opts=struct('Parent',h_full(ev),'FaceAlpha',0.5,'LineWidth',Style.Viewer.Pattern.LineWidth);
+    h_es=errorshade(x,FD(ev).full.means(x+0.5,dataset,type(ev)),FD(ev).full.sems(x+0.5,dataset,type(ev)),Style.DuoColor(dataset,:),Opts);
+    set(h_es(1),'UserData',dataid(dataset),'DisplayName',get(handles.(sprintf('name%d',dataset)),'String'))
+    set(h_es(2),'UserData',dataid(dataset),'Tag','ErrorShade')
+    
     x=0.5:48-0.5;
-     line(x,FD(ev).day.means(:,dataset,type(ev)),'Parent',h_day(ev),'UserData',dataid(dataset),'DisplayName',get(handles.(sprintf('name%d',dataset)),'String'), ...
-       'Color',Style.DuoColor(dataset,:),Style.Viewer.Patterns);
-     he=errorbar(x,FD(ev).day.means(:,dataset,type(ev)),FD(ev).day.sems(:,dataset,type(ev)),'Parent',h_day(ev),'UserData',dataid(dataset));
-       set(he,'Color',Style.DuoColor(dataset,:),Style.Viewer.PatternsError)
+    Opts=struct('Parent',h_day(ev),'FaceAlpha',0.5,'LineWidth',Style.Viewer.Pattern.LineWidth);
+    h_es=errorshade(x,FD(ev).day.means(x+0.5,dataset,type(ev)),FD(ev).day.sems(x+0.5,dataset,type(ev)),Style.DuoColor(dataset,:),Opts);
+    set(h_es(1),'UserData',dataid(dataset),'DisplayName',get(handles.(sprintf('name%d',dataset)),'String'))
+    set(h_es(2),'UserData',dataid(dataset))
   end
 end
 function plot_bars(dataset,handles)
@@ -1609,7 +1618,8 @@ for ev=event
   set(h_full(ev),'YLim',[0 ymax(ev)])
   if get(handles.file_load,'UserData')
     for d=1:max(FD(1).days)
-      fill([ZT_dark(d) ZT_dark(d) ZT_light(d+1) ZT_light(d+1)],[0 ymax(ev) ymax(ev) 0],Style.PeriodColor(2,:),'Parent',h_full(ev),'LineStyle','none','Tag','DarkBox','Clipping','on')
+      h_shade=fill([ZT_dark(d) ZT_dark(d) ZT_light(d+1) ZT_light(d+1)],[0 ymax(ev) ymax(ev) 0],Style.PeriodColor(2,:),'Parent',h_full(ev),'LineStyle','none','Tag','DarkBox','Clipping','on');
+      set(get(get(h_shade,'Annotation'),'LegendInformation'),'IconDisplayStyle','off')
     end
     darkboxes=findobj(get(h_full(ev),'Children'),'Tag','DarkBox');
     other_kids=setdiff(get(h_full(ev),'Children'),darkboxes);
@@ -1618,7 +1628,8 @@ for ev=event
   % Day
   set(h_day(ev),'YLim',[0 ymax(ev)])
   if get(handles.file_load,'UserData')
-    fill([ZT_dark(1) ZT_dark(1) ZT_light(2) ZT_light(2)],[0 ymax(ev) ymax(ev) 0],Style.PeriodColor(2,:),'Parent',h_day(ev),'LineStyle','none','Tag','DarkBox','Clipping','on')
+    h_shade=fill([ZT_dark(1) ZT_dark(1) ZT_light(2) ZT_light(2)],[0 ymax(ev) ymax(ev) 0],Style.PeriodColor(2,:),'Parent',h_day(ev),'LineStyle','none','Tag','DarkBox','Clipping','on');
+    set(get(get(h_shade,'Annotation'),'LegendInformation'),'IconDisplayStyle','off')
     darkboxes=findobj(get(h_day(ev),'Children'),'Tag','DarkBox');
     other_kids=setdiff(get(h_day(ev),'Children'),darkboxes);
     set(h_day(ev),'Children',[other_kids ; darkboxes])
