@@ -34,7 +34,7 @@ function version=fsabout(instr)
 % Suggestions of improvements or corrections are gratefully received.
 %
 
-version='0.931 (beta)';
+version='1.00';
 
 if nargin==0
   figurePosition=getpixelposition(gcf);
