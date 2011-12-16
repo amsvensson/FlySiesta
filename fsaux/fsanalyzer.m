@@ -1540,6 +1540,7 @@ STRUCT=distrStruct(EXPDATA.number_of_flies(1));
 if event==sb; STRUCT.startpoint=EXPDATA.sleep_threshold;
 else STRUCT.startpoint=1;
 end
+STRUCT.minEps=STRUCT.startpoint; % Depends on resolution! (Here, 1 min = 1 binstep)
 STRUCT.okindex=EXPDATA.matrix_index;
 
 if hours_period(period)>0   % Not in Light During DD Analysis
