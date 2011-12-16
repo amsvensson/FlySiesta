@@ -232,33 +232,43 @@ for i=1:length(string)
 end
 end
 function points=calc_distrpoints(EXPDATA,DISTR)
-% Find Light and Dark Periods
-if isnan(EXPDATA.setperiods(1,1)); EXPDATA.setperiods(1,1)=EXPDATA.lights(1); end
-if isnan(EXPDATA.setperiods(1,2)); EXPDATA.setperiods(1,2)=EXPDATA.lights(2); end
-if isnan(EXPDATA.setperiods(2,1)); EXPDATA.setperiods(2,1)=EXPDATA.lights(2); end
-if isnan(EXPDATA.setperiods(2,2)); EXPDATA.setperiods(2,2)=EXPDATA.lights(1); end
-if EXPDATA.setperiods(1,2)>=EXPDATA.setperiods(1,1)
-  hours_light=[EXPDATA.setperiods(1,1):EXPDATA.setperiods(1,2)-1];
+% Test if fields are compatible with newer analysis versions
+if isfield(DISTR(1,1),'Eps')
+  points=cell(4,2);
+  for ev=1:4
+    for per=1:2
+      points{ev,per}=DISTR(ev,per).nrEps;
+    end
+  end
 else
-  hours_light=[EXPDATA.setperiods(1,1):24 1:EXPDATA.setperiods(1,2)-1];
-end
-if EXPDATA.setperiods(2,2)>EXPDATA.setperiods(2,1)
-  hours_dark=[EXPDATA.setperiods(2,1):EXPDATA.setperiods(2,2)-1];
-else
-  hours_dark=[EXPDATA.setperiods(2,1):24 1:EXPDATA.setperiods(2,2)-1];
-end
-timeindex=reshape(repmat([EXPDATA.lights(1):24 1:EXPDATA.lights(1)-1],60,1),1,1440);
-lightperiod=repmat(ismember(timeindex,hours_light)',EXPDATA.days,1);
-darkperiod=repmat(ismember(timeindex,hours_dark)',EXPDATA.days,1);
-period={lightperiod darkperiod};
-
-% Find number of ibis/bouts
-points=cell(4,2);
-for ev=1:4
-  for per=1:2
-    bouts=NaN(size(EXPDATA.activity));
-    bouts([DISTR(ev,per).matrix(:,2)])=DISTR(ev,per).matrix(:,1);
-    points{ev,per}=sum(isfinite(bouts(period{per},:)),1); % NB: NOT normalized over days!! (/EXPDATA.days);
+  % Find Light and Dark Periods
+  if isnan(EXPDATA.setperiods(1,1)); EXPDATA.setperiods(1,1)=EXPDATA.lights(1); end
+  if isnan(EXPDATA.setperiods(1,2)); EXPDATA.setperiods(1,2)=EXPDATA.lights(2); end
+  if isnan(EXPDATA.setperiods(2,1)); EXPDATA.setperiods(2,1)=EXPDATA.lights(2); end
+  if isnan(EXPDATA.setperiods(2,2)); EXPDATA.setperiods(2,2)=EXPDATA.lights(1); end
+  if EXPDATA.setperiods(1,2)>=EXPDATA.setperiods(1,1)
+    hours_light=[EXPDATA.setperiods(1,1):EXPDATA.setperiods(1,2)-1];
+  else
+    hours_light=[EXPDATA.setperiods(1,1):24 1:EXPDATA.setperiods(1,2)-1];
+  end
+  if EXPDATA.setperiods(2,2)>EXPDATA.setperiods(2,1)
+    hours_dark=[EXPDATA.setperiods(2,1):EXPDATA.setperiods(2,2)-1];
+  else
+    hours_dark=[EXPDATA.setperiods(2,1):24 1:EXPDATA.setperiods(2,2)-1];
+  end
+  timeindex=reshape(repmat([EXPDATA.lights(1):24 1:EXPDATA.lights(1)-1],60,1),1,1440);
+  lightperiod=repmat(ismember(timeindex,hours_light)',EXPDATA.days,1);
+  darkperiod=repmat(ismember(timeindex,hours_dark)',EXPDATA.days,1);
+  period={lightperiod darkperiod};
+  
+  % Find number of ibis/bouts
+  points=cell(4,2);
+  for ev=1:4
+    for per=1:2
+      bouts=NaN(size(EXPDATA.activity));
+      bouts([DISTR(ev,per).matrix(:,2)])=DISTR(ev,per).matrix(:,1);
+      points{ev,per}=sum(isfinite(bouts(period{per},:)),1); % NB: NOT normalized over days!! (/EXPDATA.days);
+    end
   end
 end
 end
@@ -668,8 +678,10 @@ function fittype_commonfcn(value,handles)
 set(handles.methodsep,'UserData',value)
 fittype={'type1' 'type2'};
 % tabaxes
-try   set(findobj(handles.tabaxes,'Tag',fittype{value+1}),'Visible','off')
-catch set(findobj(handles.tabaxes,'Tag',fittype{value-1}),'Visible','off')
+try
+  set(findobj(handles.tabaxes,'Tag',fittype{value+1}),'Visible','off')
+catch
+  set(findobj(handles.tabaxes,'Tag',fittype{value-1}),'Visible','off')
 end
 set(findobj(handles.tabaxes,'Tag',fittype{value}),'Visible','on');
 if get(handles.wBbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wB'),'Visible','off'); end
@@ -677,8 +689,10 @@ if get(handles.wnlbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wn
 if get(handles.wlinbox,'Value')==1; set(findobj(handles.tabaxes,'DisplayName','wlin'),'Visible','off'); end
 % resultaxes
 if any(handles.tab==[2 3])
-  try   set(findobj(handles.resultaxes,'Tag',fittype{value+1}),'Visible','off')
-  catch set(findobj(handles.resultaxes,'Tag',fittype{value-1}),'Visible','off')
+  try
+    set(findobj(handles.resultaxes,'Tag',fittype{value+1}),'Visible','off')
+  catch
+    set(findobj(handles.resultaxes,'Tag',fittype{value-1}),'Visible','off')
   end
   set(findobj(handles.resultaxes,'Tag',fittype{value}),'Visible','on')
 end
@@ -745,12 +759,16 @@ for fitname={'wB' 'wnl' 'wlin'};
 end
  % Radiobuttons
  fittype={'type1' 'type2'};
- try   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
- catch set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
+ try
+   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
+ catch
+   set(findobj(handles.tabaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
  end
  if any(handles.tab==[2 3])
-   try   set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
-   catch set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
+   try
+     set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')+1}),'Visible','off')
+   catch
+     set(findobj(handles.resultaxes,'Tag',fittype{get(handles.methodsep,'UserData')-1}),'Visible','off')
    end
  end
  
@@ -790,11 +808,15 @@ resultplot_type2(value,dataset,handles)
    % Individual Fits (fittype 1)
     yfit=fitfcn(xfit,w.k(value),w.lambda(value));
     for i=1:length(value)
-      try yend=find(xfit==x(sum(isfinite(y(:,i)))));
-      catch yend=1;
+      try
+        yend=find(xfit==x(sum(isfinite(y(:,i)))));
+      catch
+        yend=1;
       end
-      try yfit(yend+2:end,i)=NaN;
-      catch yfit(yend:end,i)=NaN;
+      try
+        yfit(yend+2:end,i)=NaN;
+      catch
+        yfit(yend:end,i)=NaN;
       end
     end
     line(xfit,yfit,'Parent',ax,'UserData',dataid(dataset),'DisplayName',fitname{f},'Tag',fittype{1}, ...
@@ -856,15 +878,17 @@ if length(value)>=n
 else
   text('Units','normalized','Position',[0.025,0.95],'String',sprintf('Select More Flies (at least %d)',n),'Parent',ax, ...
        'UserData',dataid(dataset),'FontSize',8,'Color',[0.5 0.5 0.5],'HorizontalAlignment','left','VerticalAlignment','bottom')
-
+  x_n=1;
 end
   function plotfits(w,f)
    % Fit to Mean (fittype 1)
     [B(f),k(f),lambda(f)]=fit_supermean(STRUCT.survival_histogram(STRUCT.startpoint:end,value),n,mu,sigma,f);
     yfit=fitfcn(xfit,k(f),lambda(f));
     yend=find(xfit==x(sum(y_n>=n)));
-    try yfit(yend+2:end)=NaN;
-    catch yfit(yend:end)=NaN;
+    try
+      yfit(yend+2:end)=NaN;
+    catch
+      yfit(yend:end)=NaN;
     end
     line(xfit,yfit,'Parent',ax,'UserData',dataid(dataset),'DisplayName',fitname{f},'Tag',fittype{1}, ...
       Style.Fits(f));
@@ -1060,9 +1084,11 @@ if get(handles.xscale,'Value') == 1
   set(ax,'XLim',[-0.1 max(get(ax,'UserData'))],'XTickMode','auto','XTickLabelMode','auto')
   % Adjust
   ticklabels=get(ax,'XTick');
-  ticklabels(1)=startpoint;
-  newticks=ticklabels-startpoint;
-  set(ax,'XTick',newticks,'XTickLabel',ticklabels)
+  if max(ticklabels)>startpoint
+    ticklabels(1)=startpoint;
+    newticks=ticklabels-startpoint;
+    set(ax,'XTick',newticks,'XTickLabel',ticklabels)
+  end
 else
   set(ax,'XLim',[0.4 max(get(ax,'UserData'))],'XTickMode','auto','XTickLabelMode','auto')
 end
