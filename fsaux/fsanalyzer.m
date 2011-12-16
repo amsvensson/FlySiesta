@@ -1535,15 +1535,7 @@ end
 
 function [STRUCT]=distrfits(input_matrix)
 
-STRUCT=struct('matrix',[],'startpoint',[],'histogram',[],'survival_histogram',[],'okindex',[],...
-        'wB',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[]),...
-       'wnl',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[],'counter',NaN(1,EXPDATA.number_of_flies(1))),...
-      'wlin',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[]),...
-         'B',NaN(1,EXPDATA.number_of_flies(1)),...
-         'M',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'DFA',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'F',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'weibull_pdf',[],'weibull_survival',[],'weibull_lin',[]);
+STRUCT=distrStruct(EXPDATA.number_of_flies(1));
 
 if event==sb; STRUCT.startpoint=EXPDATA.sleep_threshold;
 else STRUCT.startpoint=1;
@@ -1724,10 +1716,6 @@ end
 
 %%% Calculate R-SQUARE values %%%
 if ishandle(h_waitbar)
-  STRUCT.weibull_pdf=@(x,k,lambda)((repmat(k./lambda,[size(x,1) 1]).*(x*(1./lambda)).^repmat(k-1,[size(x,1) 1])).*exp(-(x*(1./lambda)).^repmat(k,[size(x,1),1])));
-  STRUCT.weibull_survival=@(x,k,lambda)(-(x*(1./lambda)).^repmat(k,[size(x,1) 1]));
-  STRUCT.weibull_lin=@(x,k,lambda)(x*k-repmat(k.*log(lambda),[size(x,1) 1]));
-
   wtype={'wB' 'wnl' 'wlin'};
   % Calculate R-square in S1 (lin-lin space)
   space=1;
