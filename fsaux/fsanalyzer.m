@@ -1571,6 +1571,7 @@ for fly=1:EXPDATA.number_of_flies(1)
   end
   
   % Save
+  STRUCT.Eps{fly}=ibis;
   if ~isempty(ibis)
     STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
   end
