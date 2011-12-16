@@ -900,22 +900,33 @@ for f=1:PRM.nrfiles
     sleep=FILES(f).EXPDATA.sleep(:,selection{f});
     days=FILES(f).EXPDATA.days;
     for per=1:2
-      % Total
-      bars(1,per).total(flyid{f},f)=sum(logical(activity(period{per},:)),1)/days;
-      bars(2,per).total(flyid{f},f)=sum(sleep(period{per},:),1)/days;
-      bars(3,per).total(flyid{f},f)=sum(~activity(period{per},:),1)/days;
-      bars(4,per).total(flyid{f},f)=sum(~sleep(period{per},:),1)/days;
       for ev=1:4
         distr=FILES(f).DISTR(ev,per);
         
-        % Number and Mean Durations
-        bouts=NaN(days*24*60,FILES(f).EXPDATA.number_of_flies(1));
-        bouts([distr.matrix(:,2)])=distr.matrix(:,1);
-        bouts=bouts(period{per},selection{f});
-        num=sum(isfinite(bouts),1)/days;
-        num(~logical(num))=NaN;
-        bars(ev,per).num(flyid{f},f)=num';
-        bars(ev,per).dur(flyid{f},f)=nanmean(bouts,1);
+        % Test if fields are compatible with newer analysis versions
+        if isfield(distr,'Eps')
+          bars(ev,per).total(flyid{f},f)=distr.sumEps(selection{f});
+          bars(ev,per).num(flyid{f},f)=distr.nrEps(selection{f});
+          bars(ev,per).dur(flyid{f},f)=distr.meanEps(selection{f});
+          
+        else
+          % Total
+          switch ev
+            case 1, bars(ev,per).total(flyid{f},f)=sum(logical(activity(period{per},:)),1)/days;
+            case 2, bars(ev,per).total(flyid{f},f)=sum(sleep(period{per},:),1)/days;
+            case 3, bars(ev,per).total(flyid{f},f)=sum(~activity(period{per},:),1)/days;
+            case 4, bars(ev,per).total(flyid{f},f)=sum(~sleep(period{per},:),1)/days;
+          end
+          
+          % Number and Mean Durations
+          bouts=NaN(days*24*60,FILES(f).EXPDATA.number_of_flies(1));
+          bouts([distr.matrix(:,2)])=distr.matrix(:,1);
+          bouts=bouts(period{per},selection{f});
+          num=sum(isfinite(bouts),1)/days;
+          num(~logical(num))=NaN;
+          bars(ev,per).num(flyid{f},f)=num';
+          bars(ev,per).dur(flyid{f},f)=nanmean(bouts,1);
+        end
         
         % Burst Parameters
         bars(ev,per).B(flyid{f},f)=distr.B(selection{f});
@@ -926,14 +937,16 @@ for f=1:PRM.nrfiles
         bars(ev,per).M(flyid{f},f)=distr.M(selection{f});
         bars(ev,per).DFA(flyid{f},f)=distr.DFA(selection{f});
         bars(ev,per).F(flyid{f},f)=distr.F(selection{f});
-                
+        
         % Remove Outliers (NaN them) & Run Lilliefors Test of Normality on Remaining Values
         if ~PRM.calc_diffs
           for ifield=1:length(handles.barfields)
             [bars(ev,per).(handles.barfields{ifield})(:,f),bars(ev,per).norm_p(ifield,f)]=values_norm(bars(ev,per).(handles.barfields{ifield})(:,f),PRM);
           end
         end
+        
       end
+      
     end
   end
 end

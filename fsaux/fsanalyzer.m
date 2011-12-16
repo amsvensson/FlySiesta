@@ -1535,35 +1535,33 @@ end
 
 function [STRUCT]=distrfits(input_matrix)
 
-STRUCT=struct('matrix',[],'startpoint',[],'histogram',[],'survival_histogram',[],'okindex',[],...
-        'wB',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[]),...
-       'wnl',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[],'counter',NaN(1,EXPDATA.number_of_flies(1))),...
-      'wlin',struct('k',NaN(1,EXPDATA.number_of_flies(1)),'lambda',NaN(1,EXPDATA.number_of_flies(1)),'rsquare',NaN(3,EXPDATA.number_of_flies(1)),'okfit',[]),...
-         'B',NaN(1,EXPDATA.number_of_flies(1)),...
-         'M',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'DFA',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'F',NaN(1,EXPDATA.number_of_flies(1)),...  
-         'weibull_pdf',[],'weibull_survival',[],'weibull_lin',[]);
+STRUCT=distrStruct(EXPDATA.number_of_flies(1));
 
 if event==sb; STRUCT.startpoint=EXPDATA.sleep_threshold;
 else STRUCT.startpoint=1;
 end
+STRUCT.minEps=STRUCT.startpoint; % Depends on resolution! (Here, 1 min = 1 binstep)
 STRUCT.okindex=EXPDATA.matrix_index;
 
 if hours_period(period)>0   % Not in Light During DD Analysis
 
-%%% Calculate BOUTS/IBIS and HISTOGRAMS %%%
+%%% Calculate BOUTS/IBIS %%%
+
 ibis_sorted=cell(1,EXPDATA.number_of_flies(1));
 nlargest=NaN(1,EXPDATA.number_of_flies(1));
 mean_ibis=NaN(1,EXPDATA.number_of_flies(1));
+
 for fly=1:EXPDATA.number_of_flies(1)
+
   % Find bouts
+  % Same as calling "tState2ievs", but in-script calculation is much faster.
   diffmat=diff(logical(input_matrix(:,fly)));
   start_ibis=find(diffmat(1:end-1)==-1);
   end_ibis=find(diffmat(2:end)==1);
   ibis=end_ibis-start_ibis+1;
   start_ibis=real_indices(start_ibis);
 
+  % Filter out non-valid bouts
   ibis=ibis(ibis<=hours_period(period)*60);
   start_ibis=start_ibis(ibis<=hours_period(period)*60);
   if STRUCT.startpoint>1
@@ -1578,40 +1576,85 @@ for fly=1:EXPDATA.number_of_flies(1)
     day_index(ismember(start_ibis,real_indices(:,d)))=d;
   end
   
-  % Save
+  % Save in STRUCT
+  STRUCT.Eps{fly}=ibis;
   if ~isempty(ibis)
     STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
+  else
+    for g=[all_flies female male]
+      STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+    end
   end
   
-  STRUCT.F(fly)=length(ibis)/sum(ibis);
   
-  % Calculate B, M and DFA
-  if length(unique(day_index))==EXPDATA.days
-    ibis_sorted{fly}=sort(ibis);
-    try
-      dur_corr=ibis-STRUCT.startpoint;
+  %%% Calculate BOUTS/IBIS Parameters %%%
+  if ~isempty(ibis)
+    
+    % Calculate Episode Totals, Numbers, Means and Fragmentation.
+    % Same as in Bursts Toolbox, but in-script calculation is much faster.
+    STRUCT.sumEps(fly)=sum(ibis)/EXPDATA.days;
+    STRUCT.nrEps(fly)=length(ibis)/EXPDATA.days;
+    STRUCT.meanEps(fly)=mean(ibis);
+    STRUCT.F(fly)=length(ibis)/sum(ibis);
+    
+    % Calculate B, M and DFA
+    dur_corr=ibis-STRUCT.startpoint;
+    mean_ibis(fly)=mean(dur_corr,1);
+    
+    % Burstiness B 
+    % Same as in Bursts Toolbox, but in-script calculation is much faster.
+    STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
+    if isinf(STRUCT.B(fly))
+      STRUCT.B(fly)=NaN;
+    end
+    
+    % Short-Term Memory M (Correlation) and Long-Term Memory DFA.
+    % Must be calculated per day, otherwise the stacking of bouts from different
+    % days produce false values. The mean daily value is then calculated.
+    if length(unique(day_index))==EXPDATA.days
       mem=NaN(1,EXPDATA.days);
-      for d=1:EXPDATA.days
-        dur_corr_day=dur_corr(day_index==d);
-        mem(d)=1/(length(dur_corr_day)-1) * sum( (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) );
-      end
-      STRUCT.M(fly)=mean(mem);
-      STRUCT.B(fly)=(std(dur_corr,0,1)-mean(dur_corr,1))/(std(dur_corr,0,1)+mean(dur_corr,1));
-      STRUCT.DFA(fly)=DFA(dur_corr,false);
-      nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
-      mean_ibis(fly)=mean(dur_corr,1);
-    catch
-      for g=[all_flies female male]
-        STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+      dfa=NaN(1,EXPDATA.days);
+      try
+        for d=1:EXPDATA.days
+          dur_corr_day=dur_corr(day_index==d);
+          
+          % Same as in Bursts Toolbox, but in-script calculation is much faster.
+          mem(d)=1/(length(dur_corr_day)-1) * ...
+                 sum( ...
+                      (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* ...
+                      (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ...
+                      ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) ...
+                     );
+          % Call to Bursts Toolbox function
+          dfa(d)=DFA(dur_corr_day,false);
+        end
+        
+        STRUCT.M(fly)=mean(mem);
+        if isinf(STRUCT.M(fly))
+          STRUCT.M(fly)=NaN;
+        end
+        
+        STRUCT.DFA(fly)=mean(dfa);
+        if isinf(STRUCT.DFA(fly))
+          STRUCT.DFA(fly)=NaN;
+        end
+        
+      catch
+        for g=[all_flies female male]
+          STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+        end
       end
     end
+    
+    % Precalculation for Histogram Calculations
+    ibis_sorted{fly}=sort(ibis);
+    nlargest(fly)=ibis_sorted{fly}(end-(parameters(2)-1));
   end
  
 end
-STRUCT.F(isinf(STRUCT.F))=NaN;
-STRUCT.B(isinf(STRUCT.B))=NaN;
-STRUCT.M(isinf(STRUCT.M))=NaN;
-STRUCT.DFA(isinf(STRUCT.DFA))=NaN;
+
+
+%%% Calculate HISTOGRAMS %%%
 
 halfbin=1/2; % To compensate for binsize effects on survival histograms
 STRUCT.histogram=NaN(min([parameters(1) max(nlargest)]),EXPDATA.number_of_flies(1));
@@ -1724,10 +1767,6 @@ end
 
 %%% Calculate R-SQUARE values %%%
 if ishandle(h_waitbar)
-  STRUCT.weibull_pdf=@(x,k,lambda)((repmat(k./lambda,[size(x,1) 1]).*(x*(1./lambda)).^repmat(k-1,[size(x,1) 1])).*exp(-(x*(1./lambda)).^repmat(k,[size(x,1),1])));
-  STRUCT.weibull_survival=@(x,k,lambda)(-(x*(1./lambda)).^repmat(k,[size(x,1) 1]));
-  STRUCT.weibull_lin=@(x,k,lambda)(x*k-repmat(k.*log(lambda),[size(x,1) 1]));
-
   wtype={'wB' 'wnl' 'wlin'};
   % Calculate R-square in S1 (lin-lin space)
   space=1;

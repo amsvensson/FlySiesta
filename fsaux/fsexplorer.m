@@ -232,33 +232,43 @@ for i=1:length(string)
 end
 end
 function points=calc_distrpoints(EXPDATA,DISTR)
-% Find Light and Dark Periods
-if isnan(EXPDATA.setperiods(1,1)); EXPDATA.setperiods(1,1)=EXPDATA.lights(1); end
-if isnan(EXPDATA.setperiods(1,2)); EXPDATA.setperiods(1,2)=EXPDATA.lights(2); end
-if isnan(EXPDATA.setperiods(2,1)); EXPDATA.setperiods(2,1)=EXPDATA.lights(2); end
-if isnan(EXPDATA.setperiods(2,2)); EXPDATA.setperiods(2,2)=EXPDATA.lights(1); end
-if EXPDATA.setperiods(1,2)>=EXPDATA.setperiods(1,1)
-  hours_light=[EXPDATA.setperiods(1,1):EXPDATA.setperiods(1,2)-1];
+% Test if fields are compatible with newer analysis versions
+if isfield(DISTR(1,1),'Eps')
+  points=cell(4,2);
+  for ev=1:4
+    for per=1:2
+      points{ev,per}=DISTR(ev,per).nrEps;
+    end
+  end
 else
-  hours_light=[EXPDATA.setperiods(1,1):24 1:EXPDATA.setperiods(1,2)-1];
-end
-if EXPDATA.setperiods(2,2)>EXPDATA.setperiods(2,1)
-  hours_dark=[EXPDATA.setperiods(2,1):EXPDATA.setperiods(2,2)-1];
-else
-  hours_dark=[EXPDATA.setperiods(2,1):24 1:EXPDATA.setperiods(2,2)-1];
-end
-timeindex=reshape(repmat([EXPDATA.lights(1):24 1:EXPDATA.lights(1)-1],60,1),1,1440);
-lightperiod=repmat(ismember(timeindex,hours_light)',EXPDATA.days,1);
-darkperiod=repmat(ismember(timeindex,hours_dark)',EXPDATA.days,1);
-period={lightperiod darkperiod};
-
-% Find number of ibis/bouts
-points=cell(4,2);
-for ev=1:4
-  for per=1:2
-    bouts=NaN(size(EXPDATA.activity));
-    bouts([DISTR(ev,per).matrix(:,2)])=DISTR(ev,per).matrix(:,1);
-    points{ev,per}=sum(isfinite(bouts(period{per},:)),1); % NB: NOT normalized over days!! (/EXPDATA.days);
+  % Find Light and Dark Periods
+  if isnan(EXPDATA.setperiods(1,1)); EXPDATA.setperiods(1,1)=EXPDATA.lights(1); end
+  if isnan(EXPDATA.setperiods(1,2)); EXPDATA.setperiods(1,2)=EXPDATA.lights(2); end
+  if isnan(EXPDATA.setperiods(2,1)); EXPDATA.setperiods(2,1)=EXPDATA.lights(2); end
+  if isnan(EXPDATA.setperiods(2,2)); EXPDATA.setperiods(2,2)=EXPDATA.lights(1); end
+  if EXPDATA.setperiods(1,2)>=EXPDATA.setperiods(1,1)
+    hours_light=[EXPDATA.setperiods(1,1):EXPDATA.setperiods(1,2)-1];
+  else
+    hours_light=[EXPDATA.setperiods(1,1):24 1:EXPDATA.setperiods(1,2)-1];
+  end
+  if EXPDATA.setperiods(2,2)>EXPDATA.setperiods(2,1)
+    hours_dark=[EXPDATA.setperiods(2,1):EXPDATA.setperiods(2,2)-1];
+  else
+    hours_dark=[EXPDATA.setperiods(2,1):24 1:EXPDATA.setperiods(2,2)-1];
+  end
+  timeindex=reshape(repmat([EXPDATA.lights(1):24 1:EXPDATA.lights(1)-1],60,1),1,1440);
+  lightperiod=repmat(ismember(timeindex,hours_light)',EXPDATA.days,1);
+  darkperiod=repmat(ismember(timeindex,hours_dark)',EXPDATA.days,1);
+  period={lightperiod darkperiod};
+  
+  % Find number of ibis/bouts
+  points=cell(4,2);
+  for ev=1:4
+    for per=1:2
+      bouts=NaN(size(EXPDATA.activity));
+      bouts([DISTR(ev,per).matrix(:,2)])=DISTR(ev,per).matrix(:,1);
+      points{ev,per}=sum(isfinite(bouts(period{per},:)),1); % NB: NOT normalized over days!! (/EXPDATA.days);
+    end
   end
 end
 end
