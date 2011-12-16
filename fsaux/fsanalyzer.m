@@ -1589,6 +1589,11 @@ for fly=1:EXPDATA.number_of_flies(1)
   %%% Calculate BOUTS/IBIS Parameters %%%
   if ~isempty(ibis)
     
+    % Calculate Episode Totals, Numbers, Means and Fragmentation.
+    % Same as in Bursts Toolbox, but in-script calculation is much faster.
+    STRUCT.sumEps(fly)=sum(ibis)/EXPDATA.days;
+    STRUCT.nrEps(fly)=length(ibis)/EXPDATA.days;
+    STRUCT.meanEps(fly)=mean(ibis);
     STRUCT.F(fly)=length(ibis)/sum(ibis);
     
     % Calculate B, M and DFA
