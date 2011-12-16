@@ -3,7 +3,7 @@ function flysiesta
 % Opens up FlySiesta Welcome Center, from where the FlySiesta Applications
 % can be launched. Intended for use with DAMS recordings.
 %
-% Copyright (C) 2007-2010 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of "FlySiesta" analysis program. FlySiesta is free 
@@ -25,11 +25,14 @@ function flysiesta
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
 % any part of the program, please acknowledge FlySiesta and cite:
-% "A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga & GG de Polavieja,
-% The Origin of Behavioral Bursts in Decision-Making Circuitry (Submitted)." 
+%
+%   A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga, GG de Polavieja 
+%   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
+%   PLoS Comp. Biol. 7(6): e1002075 (2011)
+%
 % Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
-% 
+%
 
 %%% Create GUI %%%
 FlySiesta_version=fsabout('version');
