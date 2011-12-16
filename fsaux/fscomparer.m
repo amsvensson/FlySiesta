@@ -74,11 +74,11 @@ FlySiesta_version=fsabout('version');
  set(handles.testmode,'UserData',[1 0 0])
  set(handles.testparam,'UserData',{'0.05' '0.05' '10000' 'NaN'})
  movegui(handles.figure,'center')
-% ! TEMPORARY
-handles.evperselect=[0 1 ; 0 0 ; 0 1 ; 0 0];
-handles.varselect=[1 1 1 1 1 1 1 1 1]; %[1 0 0 1 0 1 0 0 1];
-%set(handles.evperselect,'UserData',[0 1 ; 0 0 ; 0 1 ; 0 0]);
-% !
+
+ handles.evperselect=[1 1 ; 1 1 ; 1 1 ; 1 1];
+ handles.varselect=[1 1 1 1 1 1 1 1 1];
+ %set(handles.evperselect,'UserData',[1 1 ; 1 1 ; 1 1 ; 1 1]);
+ %set(handles.varselect,'UserData',[1 1 ; 1 1 ; 1 1 ; 1 1]);
 
 % Load Button Icons & Colors
 try 
@@ -577,9 +577,9 @@ end
 end
 function evperselect_Callback(hObject, eventdata, handles)
 % ! MAKE POP-UP SELECTION
-% For Now, Manually Select ABs, IAIs, Dark
+% For now, manually select e.g. ABs, IAIs, Dark, etc.
 
-%handles.evperselect=[0 1 ; 0 0 ; 0 1 ; 0 0];
+%handles.evperselect=[1 1 ; 1 1 ; 1 1 ; 1 1];
 % as definied TEMPORAILY in figure startup
 
 end
@@ -798,12 +798,10 @@ if isempty(name) || strcmp(name,'Title Name')
 end
 
 % Event and Period Selection for Analysis
-% ! TEMPORARY !
 evperselect=handles.evperselect;
 %evperselect=get(handles.evperselect,'UserData');
 
 % Variable Selection for Analysis
-% ! TEMPORARY !
 varselect=handles.varselect;
 
 
@@ -1442,8 +1440,6 @@ for g=1:length(FSCOMP.group)
           if ~PRM.calc_diffs
             % set y-axes for k and lambda for each fitting method the same
             set([fighandles.axes(4) fighandles.axes(5)],'YLim',[0 max(max( [1.05 get(fighandles.axes(4),'YLim') get(fighandles.axes(5),'YLim')] ))])
-            %%% FRAGMENTATION TEMPORARY !!! %%%
-            %set([fighandles.axes(7) fighandles.axes(8)],'YLim',[0 max(max( [get(fighandles.axes(7),'YLim') get(fighandles.axes(8),'YLim')] ))])
             set([fighandles.axes(6) fighandles.axes(9)],'YLimMode','auto')
           else
             set(fighandles.axes,'YLimMode','auto')
