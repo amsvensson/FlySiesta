@@ -1579,6 +1579,10 @@ for fly=1:EXPDATA.number_of_flies(1)
   STRUCT.Eps{fly}=ibis;
   if ~isempty(ibis)
     STRUCT.matrix=[STRUCT.matrix; ibis (start_ibis + (60*24*EXPDATA.days)*(fly-1)) day_index fly*ones(size(ibis))];
+  else
+    for g=[all_flies female male]
+      STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+    end
   end
   
   
@@ -1598,17 +1602,41 @@ for fly=1:EXPDATA.number_of_flies(1)
       STRUCT.B(fly)=NaN;
     end
     
+    % Short-Term Memory M (Correlation) and Long-Term Memory DFA.
+    % Must be calculated per day, otherwise the stacking of bouts from different
+    % days produce false values. The mean daily value is then calculated.
     if length(unique(day_index))==EXPDATA.days
       mem=NaN(1,EXPDATA.days);
-      for d=1:EXPDATA.days
-        dur_corr_day=dur_corr(day_index==d);
-        mem(d)=1/(length(dur_corr_day)-1) * sum( (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) );
-      end
-      STRUCT.M(fly)=mean(mem);
-      STRUCT.DFA(fly)=DFA(dur_corr,false);
-    catch
-      for g=[all_flies female male]
-        STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+      dfa=NaN(1,EXPDATA.days);
+      try
+        for d=1:EXPDATA.days
+          dur_corr_day=dur_corr(day_index==d);
+          
+          % Same as in Bursts Toolbox, but in-script calculation is much faster.
+          mem(d)=1/(length(dur_corr_day)-1) * ...
+                 sum( ...
+                      (dur_corr_day(1:end-1)-mean(dur_corr_day(1:end-1))) .* ...
+                      (dur_corr_day(2:end)-mean(dur_corr_day(2:end))) / ...
+                      ( std(dur_corr_day(1:end-1))*std(dur_corr_day(2:end)) ) ...
+                     );
+          % Call to Bursts Toolbox function
+          dfa(d)=DFA(dur_corr_day,false);
+        end
+        
+        STRUCT.M(fly)=mean(mem);
+        if isinf(STRUCT.M(fly))
+          STRUCT.M(fly)=NaN;
+        end
+        
+        STRUCT.DFA(fly)=mean(dfa);
+        if isinf(STRUCT.DFA(fly))
+          STRUCT.DFA(fly)=NaN;
+        end
+        
+      catch
+        for g=[all_flies female male]
+          STRUCT.okindex{g}=setdiff(STRUCT.okindex{g},fly);
+        end
       end
     end
     
@@ -1620,8 +1648,6 @@ for fly=1:EXPDATA.number_of_flies(1)
 end
 
 
-STRUCT.M(isinf(STRUCT.M))=NaN;
-STRUCT.DFA(isinf(STRUCT.DFA))=NaN;
 %%% Calculate HISTOGRAMS %%%
 
 halfbin=1/2; % To compensate for binsize effects on survival histograms
