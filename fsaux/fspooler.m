@@ -2,7 +2,7 @@ function varargout = fspooler
 % FlySiesta Pooler - Pool FlySiesta files for joint analysis. 
 % Requires FlySiesta files, previously created with FlySiesta Analyzer.
 %
-% Copyright (C) 2007-2010 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of "FlySiesta" analysis program. FlySiesta is free 
@@ -24,8 +24,11 @@ function varargout = fspooler
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
 % any part of the program, please acknowledge FlySiesta and cite:
-% "A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga & GG de Polavieja,
-% The Origin of Behavioral Bursts in Decision-Making Circuitry (Submitted)." 
+%
+%   A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga, GG de Polavieja 
+%   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
+%   PLoS Comp. Biol. 7(6): e1002075 (2011)
+%
 % Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
@@ -249,7 +252,7 @@ set(handles.figure,'Visible','on')
           for per=1:2
             for ev=1:size(DISTR,1)
               % matrix
-              POOLDISTR(ev,per).matrix=[POOLDISTR(ev,per).matrix ; [DISTR(ev,per).matrix(:,1) DISTR(ev,per).matrix(:,2)+POOLEXP.number_of_flies(1)*POOLEXP.days*24*60]];
+              POOLDISTR(ev,per).matrix=[POOLDISTR(ev,per).matrix ; [DISTR(ev,per).matrix(:,1) DISTR(ev,per).matrix(:,2)+POOLEXP.number_of_flies(1)*POOLEXP.days*24*60 DISTR(ev,per).matrix(:,3) DISTR(ev,per).matrix(:,4)+POOLEXP.number_of_flies(1)]];
               % histogram
               lengthpool=size(POOLDISTR(ev,per).histogram,1);
               lengthbi=size(DISTR(ev,per).histogram,1);
