@@ -6,7 +6,7 @@ function [histogram,survival_histogram]=eps2hists(Eps,mintime,binsize)
 % if not provided, is the smallest Eps, while default for binsize is the minimum
 % difference (larger than zero) found between episodes in Eps.
 %
-% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of the "Bursts Toolbox" of the "FlySiesta" analysis program.
@@ -20,10 +20,7 @@ function [histogram,survival_histogram]=eps2hists(Eps,mintime,binsize)
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 % General Public License for more details.
 %
-% Contact:
-% http://www.neural-circuits.org/flysiesta
-% http://groups.google.com/group/flysiesta
-% amanda@neural-circuits.org
+% Contact: amanda@amsorribes.com
 %
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
@@ -33,7 +30,6 @@ function [histogram,survival_histogram]=eps2hists(Eps,mintime,binsize)
 %   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
 %   PLoS Comp. Biol. 7(6): e1002075 (2011)
 %
-% Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
 

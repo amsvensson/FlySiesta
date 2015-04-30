@@ -1,17 +1,15 @@
-************************************************************************************
+**************************************************************************************
                                   FlySiesta
-                              version 0.931 (beta)
+                                 version 1.01
 
                    http://www.neural-circuits.org/flysiesta
  
-Copyright (C) 2007-2011 Amanda Sorribes, Universidad Autonoma de Madrid, and
+Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
                         Consejo Superior de Investigaciones Cientificas (CSIC).
 
-For info on future releases, comments, bug reports, improvements or feature
-requests, join the FlySiesta Google Group: http://groups.google.com/group/flysiesta
-
-or write to: amanda@neural-circuits.org
-************************************************************************************
+For info on future releases, comments, bug reports, improvements or feature requests,
+please write to: amanda@amsorribes.com
+**************************************************************************************
 
 Contents
 --------------------------
@@ -36,12 +34,11 @@ in analyzing the fine scale dynamics of the transitions between
 the behavioral states, by studying the 'burstiness' of the inter-
 event-interval or event-length distributions.
 
-For more information on how to interpret the burstiness parameters,
-see
+For more information on how to interpret the burstiness parameters, 
+see: 
 A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga & GG de Polavieja, 
 The Origin of Behavioral Bursts in Decision-Making Circuitry 
-(Submitted), 
-or the FlySiesta homepage for an updated reference.
+PLoS Comp. Biol. 7(6): e1002075 (2011)
 
 
 II. Installation & Usage
@@ -72,16 +69,13 @@ and Matlab's Curve Fitting Toolbox, to perform its analysis.
 
 IV. Bug Reports & Improvements
 -------------------------------------------------------------------------
-FlySiesta version 0.93 (beta) has been written in Matlab 2007b on a 
-Windows (XP and Vista) platform. It is my hope that it will also work
-in newer (and maybe older) versions of Matlab, and on other platforms, 
-but this has not been tested yet.
+FlySiesta version 1.01 has been written in Matlab, versions 2007b - 2012a 
+on a Windows (XP, Vista and Windows 7 & 8) platforms. It is my hope that 
+it will also work in newer (and maybe older) versions of Matlab, and on 
+other platforms, but it has not been tested.
 
 If you encounter any bugs or error messages while using the program, 
-please post it on the FlySiesta Google Group:
-http://groups.google.com/group/flysiesta
-
-or write me at: amanda@neural-circuits.org
+please write me at: amanda@amsorribes.com
 
 If possible, please include the error message (the red message in the
 Matlab Command window), what you did when it occurred, which version of
@@ -102,10 +96,10 @@ Institute, Consejo Superior de Investigaciones Cientificas, Spain.
 
 If you publish or present results that are based, or have made use of 
 any part of the program, acknowledge FlySiesta and cite:
-A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga & GG de Polavieja,
-The Origin of Behavioral Bursts in Decision-Making Circuitry 
-(Submitted).
-Please see the FlySiesta homepage for an updated reference.
+
+   A Sorribes, BG Armendariz, D Lopez-Pigozzi, C Murga, GG de Polavieja 
+   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
+   PLoS Comp. Biol. 7(6): e1002075 (2011)
 
 This program would not have been possible, without the support of
 the following research funding agencies:

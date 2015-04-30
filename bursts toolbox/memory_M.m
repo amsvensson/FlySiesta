@@ -2,7 +2,7 @@ function M=memory_M(ievs,dim)
 % Calculate short-term memory M as the correlation coefficient of consecutive
 % ievs (inter-event intervals).
 %
-% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of the "Bursts Toolbox" of the "FlySiesta" analysis program.
@@ -16,10 +16,7 @@ function M=memory_M(ievs,dim)
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 % General Public License for more details.
 %
-% Contact:
-% http://www.neural-circuits.org/flysiesta
-% http://groups.google.com/group/flysiesta
-% amanda@neural-circuits.org
+% Contact: amanda@amsorribes.com
 %
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
@@ -29,7 +26,6 @@ function M=memory_M(ievs,dim)
 %   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
 %   PLoS Comp. Biol. 7(6): e1002075 (2011)
 %
-% Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
 
