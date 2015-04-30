@@ -8,7 +8,7 @@ function varargout = fscomparer(varargin)
 % be used with Matlab Statistics Toolbox, especially the ANOVA and 
 % Kruskal-Wallis tests.
 %
-% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of "FlySiesta" analysis program. FlySiesta is free 
@@ -22,10 +22,7 @@ function varargout = fscomparer(varargin)
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 % General Public License for more details.
 %
-% Contact:
-% http://www.neural-circuits.org/flysiesta
-% http://groups.google.com/group/flysiesta
-% amanda@neural-circuits.org
+% Contact: amanda@amsorribes.com
 %
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
@@ -35,7 +32,6 @@ function varargout = fscomparer(varargin)
 %   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
 %   PLoS Comp. Biol. 7(6): e1002075 (2011)
 %
-% Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
 
@@ -75,7 +71,7 @@ FlySiesta_version=fsabout('version');
  set(handles.testparam,'UserData',{'0.05' '0.05' '10000' 'NaN'})
  movegui(handles.figure,'center')
 
- handles.evperselect=[1 1 ; 1 1 ; 1 1 ; 1 1];
+ handles.evperselect=[0 0 ; 0 0 ; 0 1 ; 0 0];
  handles.varselect=[1 1 1 1 1 1 1 1 1];
  %set(handles.evperselect,'UserData',[1 1 ; 1 1 ; 1 1 ; 1 1]);
  %set(handles.varselect,'UserData',[1 1 ; 1 1 ; 1 1 ; 1 1]);
@@ -1348,6 +1344,9 @@ CmpColors=MyStyle.Comparer.Colors;
 if PRM.nrfiles>size(CmpColors,1)
   CmpColors=repmat(CmpColors,[ceil(PRM.nrfiles/size(CmpColors,1)) 1]);
 end
+
+%CmpColors=[0.8 0 0 ; 0 0.8 0 ];
+
 pw=[1 1 2 2 2 2 2 2 2];
 bartextstate={'off' 'on'};
 stargap=min(0.025*max(FSCOMP.x),0.275);   % Space Between Stars
@@ -1439,7 +1438,7 @@ for g=1:length(FSCOMP.group)
           %%% Fix Y-Limits %%%
           if ~PRM.calc_diffs
             % set y-axes for k and lambda for each fitting method the same
-            set([fighandles.axes(4) fighandles.axes(5)],'YLim',[0 max(max( [1.05 get(fighandles.axes(4),'YLim') get(fighandles.axes(5),'YLim')] ))])
+            set([fighandles.axes(5)],'YLim',[0 max(max( [1.05 get(fighandles.axes(4),'YLim') get(fighandles.axes(5),'YLim')] ))])
             set([fighandles.axes(6) fighandles.axes(9)],'YLimMode','auto')
           else
             set(fighandles.axes,'YLimMode','auto')

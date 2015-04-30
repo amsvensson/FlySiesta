@@ -1,4 +1,4 @@
-function [k,lambda,r2,xcdf]=weibull_kL(ievs,mintime,binsize)
+function [k,lambda,r2,D,logL,CvM,Area,EMD]=weibull_kLD(ievs,mintime,binsize)%,xmin)
 % Calculate the Weibull Linear Fit (least square error) parameters LAMBDA (scale)
 % and K (shape), from the inter-event intervals in IEVS. Optional input 
 % argument MINTIME defines the shortest possible IEVs duration, while BINSIZE
@@ -48,16 +48,17 @@ if ~isempty(ievs) && length(ievs)>=3
   ievs=ievs-mintime;
   
   % Calculate histogram
-  x=unique(ievs)';
-  %x=[0:binsize:max(ievs)];
+  %x=unique(ievs)';
+  x=[0:binsize:max(ievs)];
   y=hist(ievs,x);
   y=y/sum(y);
   
   % Calculate surivival histogram
   x=x-binsize/2;
   x(1)=0;
-  y(end:-1:1)=cumsum(y(end:-1:1));
   xcdf=x;
+  ycdf=cumsum(y);
+  y(end:-1:1)=cumsum(y(end:-1:1));
   
   % Linearize
   y(~logical(y))=NaN;
@@ -76,11 +77,36 @@ if ~isempty(ievs) && length(ievs)>=3
   y_fit=x*k-k*log(lambda);
   r2= 1 - ( nansum( (y - y_fit).^2 ) / nansum( (y-nanmean(y)).^2 ) );
   
+  % Calculate Kolmogorov-Smirnov distance
+  yfitcdf = wblcdf(xcdf, lambda, k);
+  D = max(abs(ycdf - yfitcdf));
+  Area = sum(abs(ycdf - yfitcdf) * binsize);
+  CvM = sum((ycdf - yfitcdf).^2 * binsize);
+  
+%   THRESHOLD = 3;
+%   N = length(ycdf);
+%   C = ones(N,N).*THRESHOLD;
+%   for i = 1:N
+%     for j = max([1 i-THRESHOLD+1]):min([N i+THRESHOLD-1])
+%       C(i,j) = abs(i-j);
+%     end
+%   end
+  EMD = NaN; %emd_hat_gd_metric_mex(ycdf', yfitcdf', C);
+  
+  
+  % Calculate log-likelihood
+  x = ievs;
+  xmin = mintime; %now input - use xmin from powerlaw fit!
+  x = x(x >= xmin);
+  n = length(x);
+
+  logL = n*log(k) - n*k*log(lambda) - n*(xmin/lambda)^k + (k-1)*sum(log(x)) - sum((x/lambda).^k);
+  
 else
   k=NaN;
   lambda=NaN;
   r2=NaN;
-  xcdf=[];
+  D=NaN;
 end
 
 end

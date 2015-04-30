@@ -2,24 +2,21 @@ function varargout = fsbatch
 % FlySiesta Batch - Batch Analyze FlySiesta .settings files.
 % Requires FlySiesta settings files, previously created with FlySiesta Analyzer.
 %
-% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
-%
-% This file is part of "FlySiesta" analysis program. FlySiesta is free
-% software: you can redistribute it and/or modify it under the terms of
-% the GNU General Public License as published by the Free Software
-% Foundation, either version 3 of the License, or any later version
+% 
+% This file is part of "FlySiesta" analysis program. FlySiesta is free 
+% software: you can redistribute it and/or modify it under the terms of 
+% the GNU General Public License as published by the Free Software 
+% Foundation, either version 3 of the License, or any later version 
 % (http://www.gnu.org/licenses/gpl.txt).
-%
-% FlySiesta is distributed in the hope that it will be useful, but
-% WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+% 
+% FlySiesta is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 % General Public License for more details.
 %
-% Contact:
-% http://www.neural-circuits.org/flysiesta
-% http://groups.google.com/group/flysiesta
-% amanda@neural-circuits.org
+% Contact: amanda@amsorribes.com
 %
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
@@ -29,7 +26,6 @@ function varargout = fsbatch
 %   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
 %   PLoS Comp. Biol. 7(6): e1002075 (2011)
 %
-% Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
 
