@@ -4,7 +4,7 @@ function Alpha=DFA(IEVs,doplot)
 % passed, to control whether to plot the straight line fit to the detrended 
 % integrated time series. Default is FALSE.
 %
-% Copyright (C) 2007-2012 Amanda Sorribes, Universidad Autonoma de Madrid, and
+% Copyright (C) 2007-2015 Amanda Sorribes, Universidad Autonoma de Madrid, and
 %                         Consejo Superior de Investigaciones Cientificas (CSIC).
 % 
 % This file is part of the "Bursts Toolbox" of the "FlySiesta" analysis program.
@@ -18,10 +18,7 @@ function Alpha=DFA(IEVs,doplot)
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
 % General Public License for more details.
 %
-% Contact:
-% http://www.neural-circuits.org/flysiesta
-% http://groups.google.com/group/flysiesta
-% amanda@neural-circuits.org
+% Contact: amanda@amsorribes.com
 %
 % Please Acknowledge:
 % If you publish or present results that are based, or have made use of 
@@ -31,7 +28,6 @@ function Alpha=DFA(IEVs,doplot)
 %   'The Origin of Behavioral Bursts in Decision-Making Circuitry'. 
 %   PLoS Comp. Biol. 7(6): e1002075 (2011)
 %
-% Please see the FlySiesta homepage for updated reference. 
 % Suggestions of improvements or corrections are gratefully received.
 %
 
